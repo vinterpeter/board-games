@@ -1,5 +1,13 @@
 import { initializeApp } from 'firebase/app'
 import { getDatabase, ref, set, onValue, push, update, remove, get } from 'firebase/database'
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  type User
+} from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,10 +27,49 @@ const isFirebaseConfigured = () => {
 // Initialize Firebase only if configured
 let app: ReturnType<typeof initializeApp> | null = null
 let database: ReturnType<typeof getDatabase> | null = null
+let auth: ReturnType<typeof getAuth> | null = null
+const googleProvider = new GoogleAuthProvider()
 
 if (isFirebaseConfigured()) {
   app = initializeApp(firebaseConfig)
   database = getDatabase(app)
+  auth = getAuth(app)
 }
 
-export { database, ref, set, onValue, push, update, remove, get, isFirebaseConfigured }
+// Auth functions
+const signInWithGoogle = async (): Promise<User | null> => {
+  if (!auth) return null
+  try {
+    const result = await signInWithPopup(auth, googleProvider)
+    return result.user
+  } catch (error) {
+    console.error('Google sign-in error:', error)
+    return null
+  }
+}
+
+const signOut = async (): Promise<void> => {
+  if (!auth) return
+  try {
+    await firebaseSignOut(auth)
+  } catch (error) {
+    console.error('Sign-out error:', error)
+  }
+}
+
+export {
+  database,
+  ref,
+  set,
+  onValue,
+  push,
+  update,
+  remove,
+  get,
+  isFirebaseConfigured,
+  auth,
+  signInWithGoogle,
+  signOut,
+  onAuthStateChanged,
+  type User
+}

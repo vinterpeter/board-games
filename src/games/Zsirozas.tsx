@@ -263,7 +263,7 @@ export default function Zsirozas() {
             message: `🤖 Gép hívott: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}`,
           }
 
-          setIsAIThinking(false)
+          setTimeout(() => setIsAIThinking(false), 2000)
           return newState
         }
 
@@ -305,7 +305,7 @@ export default function Zsirozas() {
                   ? `🤖 Gép hetessel ütött!`
                   : `🤖 Gép ütött: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}!`,
               }
-              setIsAIThinking(false)
+              setTimeout(() => setIsAIThinking(false), 2000)
               return newState
             } else {
               // AUTO PASS - no hitting cards or doesn't want to hit
@@ -319,7 +319,7 @@ export default function Zsirozas() {
               setTimeout(() => {
                 setGame(prev => takePile(prev))
                 setIsAIThinking(false)
-              }, 1000)
+              }, 2000)
               return newState
             }
           }
@@ -341,7 +341,7 @@ export default function Zsirozas() {
                 ? `🤖 Gép hetessel ütött!`
                 : `🤖 Gép ütött: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}!`,
             }
-            setIsAIThinking(false)
+            setTimeout(() => setIsAIThinking(false), 2000)
             return newState
           } else if (nonHittingCards.length > 0) {
             // Play non-hitting card (doesn't want to hit or can't)
@@ -353,7 +353,7 @@ export default function Zsirozas() {
               currentPlayer: 'player',
               message: `🤖 Gép: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}`,
             }
-            setIsAIThinking(false)
+            setTimeout(() => setIsAIThinking(false), 2000)
             return newState
           } else {
             // Only hitting cards - forced to hit
@@ -366,7 +366,7 @@ export default function Zsirozas() {
               currentPlayer: 'player',
               message: `🤖 Gép ütött: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}!`,
             }
-            setIsAIThinking(false)
+            setTimeout(() => setIsAIThinking(false), 2000)
             return newState
           }
         }
@@ -478,71 +478,13 @@ export default function Zsirozas() {
   return (
     <div className="zsirozas">
       <div className="game-header">
-        <div className="scores">
-          <span className={game.currentPlayer === 'player' ? 'active' : ''}>
-            👤 {playerName}: {playerPoints} zsír
-          </span>
-          <span> - </span>
-          <span className={game.currentPlayer === 'ai' ? 'active' : ''}>
-            🤖 {aiPoints} zsír
-          </span>
-        </div>
-        <div className="deck-info">
-          📚 Pakli: {game.deck.length}
-        </div>
+        <span className={`score-left ${game.currentPlayer === 'player' ? 'active' : ''}`}>
+          👤 {playerPoints}
+        </span>
+        <span className={`score-right ${game.currentPlayer === 'ai' ? 'active' : ''}`}>
+          🤖 {aiPoints}
+        </span>
       </div>
-
-      <div className="game-status">{game.message}</div>
-
-      {game.gamePhase === 'playing' && (
-        <div className="turn-indicator">
-          {isAIThinking ? (
-            <span className="thinking">🤖 A gép gondolkodik...</span>
-          ) : game.currentPlayer === 'player' && game.playerHand.length > 0 ? (
-            game.pile.length === 0 ? (
-              // No cards on table - start a new round
-              <span className="your-turn">👆 Kezdj új kört - tegyél le egy lapot!</span>
-            ) : game.roundStarter === 'player' ? (
-              // Player is the caller (hívó)
-              game.lastHitter === 'player' ? (
-                // Player called and is still the hitter - AUTO TAKE happening
-                <span className="your-turn">✅ Beviszed a paklit...</span>
-              ) : hasHittingCard(game.playerHand, game.baseRank) ? (
-                // Player called, AI hit, player CAN hit back
-                <div className="zsir-decision">
-                  <span className="your-turn">
-                    ⚡ A gép ütött!
-                    <span className="hint"> Üss vissza ({RANK_NAMES[game.baseRank!]} vagy 7) vagy passzolj!</span>
-                  </span>
-                  <button className="btn-pass" onClick={playerPasses}>
-                    ✋ Passz - gép viszi
-                  </button>
-                </div>
-              ) : (
-                // Player called, AI hit, player has NO hitting cards - AUTO PASS happening
-                <span className="your-turn">😔 Nincs ütő lapod - gép viszi...</span>
-              )
-            ) : (
-              // Player is responder (válaszoló) - MUST play a card
-              game.lastHitter === 'player' ? (
-                <span className="your-turn">
-                  ✅ Te vagy az ütő!
-                  <span className="hint"> Tegyél le egy lapot.</span>
-                </span>
-              ) : (
-                <span className="your-turn">
-                  👆 Tegyél le egy lapot!
-                  <span className="hint">
-                    {hasHittingCard(game.playerHand, game.baseRank)
-                      ? ` Üthetsz: ${RANK_NAMES[game.baseRank!]} vagy 7`
-                      : ``}
-                  </span>
-                </span>
-              )
-            )
-          ) : null}
-        </div>
-      )}
 
       {game.gamePhase === 'finished' ? (
         <div className="game-over">
@@ -556,7 +498,7 @@ export default function Zsirozas() {
         <>
           {/* AI hand */}
           <div className="ai-hand">
-            <div className="hand-label">🤖 Gép ({game.aiHand.length} lap)</div>
+            <div className="hand-label">🤖 Gép</div>
             <div className="cards">
               {game.aiHand.map((_, i) => (
                 <div key={i} className="hungarian-card back">
@@ -568,29 +510,35 @@ export default function Zsirozas() {
 
           {/* Pile */}
           <div className="pile-area">
-            <div className="pile-label">
-              Asztal ({game.pile.length} lap)
-              {game.lastHitter && <span className="pile-owner"> - {game.lastHitter === 'player' ? '👤 Tiéd' : '🤖 Gépé'}</span>}
-            </div>
-            <div className="pile">
-              {game.pile.length === 0 ? (
-                <div className="empty-pile">Üres</div>
-              ) : (
-                game.pile.map((pileCard, i) => (
-                  <div key={pileCard.card.id} className="pile-card-wrapper" style={{ marginLeft: i > 0 ? -40 : 0 }}>
-                    <div className={`pile-card-owner ${pileCard.playedBy}`}>
-                      {pileCard.playedBy === 'player' ? '👤' : '🤖'}
+            <div className="pile-row">
+              <div className="pile">
+                {game.pile.length === 0 ? (
+                  <div className="empty-pile"></div>
+                ) : (
+                  game.pile.map((pileCard, i) => (
+                    <div key={pileCard.card.id} className="pile-card-wrapper" style={{ marginLeft: i > 0 ? -50 : 0 }}>
+                      {renderCard(pileCard.card)}
                     </div>
-                    {renderCard(pileCard.card)}
-                  </div>
-                ))
+                  ))
+                )}
+              </div>
+              {/* Pass button - only show when player can pass */}
+              {game.currentPlayer === 'player' &&
+               game.roundStarter === 'player' &&
+               game.lastHitter !== 'player' &&
+               game.pile.length > 0 &&
+               hasHittingCard(game.playerHand, game.baseRank) &&
+               !isAIThinking && (
+                <button className="btn-pass" onClick={playerPasses}>
+                  ✋ Passz
+                </button>
               )}
             </div>
           </div>
 
           {/* Player hand */}
           <div className="player-hand">
-            <div className="hand-label">👤 {playerName} ({game.playerHand.length} lap)</div>
+            <div className="hand-label">👤 {playerName}</div>
             <div className="cards">
               {game.playerHand.map(card =>
                 renderCard(
@@ -602,57 +550,6 @@ export default function Zsirozas() {
             </div>
           </div>
 
-          {/* Won cards info */}
-          <div className="won-cards-info">
-            <span>👤 Bevitt: {game.playerWon.length} lap ({playerPoints} zsír)</span>
-            <span>🤖 Bevitt: {game.aiWon.length} lap ({aiPoints} zsír)</span>
-          </div>
-
-          {/* Debug info */}
-          <div className="debug-info">
-            <details>
-              <summary>🔧 Debug ({32 - game.deck.length - game.playerHand.length - game.aiHand.length - game.pile.length - game.playerWon.length - game.aiWon.length} hiányzik)</summary>
-              <div className="debug-section">
-                <strong>📚 Pakli ({game.deck.length}):</strong>
-                <div className="debug-cards">
-                  {game.deck.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}`).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="debug-section">
-                <strong>👤 Játékos keze ({game.playerHand.length}):</strong>
-                <div className="debug-cards">
-                  {game.playerHand.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}`).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="debug-section">
-                <strong>🤖 Gép keze ({game.aiHand.length}):</strong>
-                <div className="debug-cards">
-                  {game.aiHand.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}`).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="debug-section">
-                <strong>🃏 Asztal ({game.pile.length}):</strong>
-                <div className="debug-cards">
-                  {game.pile.map(p => `${p.playedBy === 'player' ? '👤' : '🤖'}${SUIT_SYMBOLS[p.card.suit]}${RANK_NAMES[p.card.rank]}`).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="debug-section">
-                <strong>👤 Bevitt ({game.playerWon.length}):</strong>
-                <div className="debug-cards">
-                  {game.playerWon.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}${isZsir(c) ? '🔥' : ''}`).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="debug-section">
-                <strong>🤖 Gép bevitt ({game.aiWon.length}):</strong>
-                <div className="debug-cards">
-                  {game.aiWon.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}${isZsir(c) ? '🔥' : ''}`).join(', ') || '-'}
-                </div>
-              </div>
-              <div className="debug-section">
-                <strong>State:</strong> currentPlayer={game.currentPlayer}, roundStarter={game.roundStarter || 'null'}, lastHitter={game.lastHitter || 'null'}, baseRank={game.baseRank || 'null'}
-              </div>
-            </details>
-          </div>
         </>
       )}
     </div>

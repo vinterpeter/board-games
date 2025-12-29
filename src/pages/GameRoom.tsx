@@ -13,7 +13,6 @@ export default function GameRoom() {
   const navigate = useNavigate()
   const gameId = searchParams.get('game')
 
-  const [playerName] = useState(() => sessionStorage.getItem('playerName') || 'Vendég')
   const [isHost] = useState(() => sessionStorage.getItem('isHost') === 'true')
   const [opponent, setOpponent] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -56,58 +55,23 @@ export default function GameRoom() {
     }
   }
 
+  const gameName =
+    gameId === 'tictactoe' ? '⭕ Amőba' :
+    gameId === 'connect4' ? '🔵 Connect 4' :
+    gameId === 'memory' ? '🃏 Memory' :
+    gameId === 'battleship' ? '🚢 Torpedó' :
+    gameId === 'zsirozas' ? '🌰 Zsírozás' :
+    gameId === 'snapszer' ? '❤️ Snapszer' :
+    'Játék'
+
   return (
     <div className="game-room">
-      <button className="back-button" onClick={() => navigate('/')}>
-        ← Kilépés
-      </button>
-
-      <h1>{
-        gameId === 'tictactoe' ? '⭕ Amőba' :
-        gameId === 'connect4' ? '🔵 Connect 4' :
-        gameId === 'memory' ? '🃏 Memory' :
-        gameId === 'battleship' ? '🚢 Torpedó' :
-        gameId === 'zsirozas' ? '🌰 Zsírozás' :
-        gameId === 'snapszer' ? '❤️ Snapszer' :
-        'Játék'
-      }</h1>
-
-      <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        <p style={{ color: '#888', margin: '0 0 0.5rem' }}>Szoba kód:</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center' }}>
-          <code style={{
-            background: '#2d2d2d',
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            fontSize: '1.5rem',
-            letterSpacing: '0.2rem',
-            color: '#667eea'
-          }}>
-            {roomId}
-          </code>
-          <button
-            onClick={copyRoomCode}
-            style={{
-              background: copied ? '#4caf50' : '#667eea',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '0.5rem 1rem',
-              color: 'white',
-              cursor: 'pointer'
-            }}
-          >
-            {copied ? '✓' : '📋'}
-          </button>
-        </div>
-      </div>
-
-      <div className="player-info">
-        <div className={`player ${isHost ? 'active' : ''}`}>
-          {isHost ? '❌' : '⭕'} {playerName} {isHost && '(Te)'}
-        </div>
-        <div className={`player ${!isHost ? 'active' : ''}`}>
-          {isHost ? '⭕' : '❌'} {opponent || 'Várakozás...'}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+        <button className="back-button" onClick={() => navigate('/')} style={{ margin: 0 }}>
+          ←
+        </button>
+        <h1 style={{ margin: 0, fontSize: '1.3rem' }}>{gameName}</h1>
+        <div style={{ width: '40px' }}></div> {/* Spacer for centering */}
       </div>
 
       {opponent ? (
@@ -122,6 +86,33 @@ export default function GameRoom() {
           </p>
         </div>
       )}
+
+      {/* Room code at the bottom */}
+      <div style={{ textAlign: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #333' }}>
+        <span style={{ color: '#666', fontSize: '0.85rem' }}>Szoba: </span>
+        <code style={{
+          background: '#2d2d2d',
+          padding: '0.25rem 0.5rem',
+          borderRadius: '4px',
+          fontSize: '0.85rem',
+          color: '#667eea'
+        }}>
+          {roomId}
+        </code>
+        <button
+          onClick={copyRoomCode}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            padding: '0.25rem',
+            color: copied ? '#4caf50' : '#666',
+            cursor: 'pointer',
+            marginLeft: '0.25rem'
+          }}
+        >
+          {copied ? '✓' : '📋'}
+        </button>
+      </div>
     </div>
   )
 }

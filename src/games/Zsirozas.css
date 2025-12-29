@@ -18,29 +18,18 @@
   border-radius: 12px;
 }
 
-.zsirozas .scores {
+.zsirozas .score-left,
+.zsirozas .score-right {
   font-size: 1.2rem;
   font-weight: bold;
   color: #888;
 }
 
-.zsirozas .scores span.active {
+.zsirozas .score-left.active,
+.zsirozas .score-right.active {
   color: #667eea;
 }
 
-.zsirozas .deck-info {
-  color: #888;
-  font-size: 1rem;
-}
-
-.zsirozas .game-status {
-  font-size: 1.1rem;
-  color: #667eea;
-  padding: 0.5rem 1rem;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 8px;
-  text-align: center;
-}
 
 .zsirozas .game-over {
   text-align: center;
@@ -126,17 +115,26 @@
   align-items: center;
 }
 
-.pile-label {
-  color: #888;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+
+.pile-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
 }
 
 .pile {
   display: flex;
   justify-content: center;
-  min-height: 100px;
+  align-items: center;
+  height: 135px; /* Fixed height for card */
   position: relative;
+  min-width: 100px;
+}
+
+.pile-row .btn-pass {
+  flex-shrink: 0;
 }
 
 .empty-pile {
@@ -145,7 +143,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100px;
+  height: 100%;
 }
 
 .pile-card {
@@ -154,66 +152,9 @@
 
 .pile-card-wrapper {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  position: relative;
 }
 
-.pile-card-owner {
-  font-size: 0.7rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  margin-bottom: 4px;
-  white-space: nowrap;
-}
-
-.pile-card-owner.player {
-  background: #667eea;
-  color: white;
-}
-
-.pile-card-owner.ai {
-  background: #ff6b6b;
-  color: white;
-}
-
-/* Turn indicator */
-.turn-indicator {
-  background: #2d2d2d;
-  padding: 0.75rem 1.5rem;
-  border-radius: 12px;
-  text-align: center;
-  width: 100%;
-}
-
-.turn-indicator .thinking {
-  color: #ff6b6b;
-  animation: pulse 1s infinite;
-}
-
-.turn-indicator .your-turn {
-  color: #4caf50;
-  font-weight: 600;
-}
-
-.turn-indicator .hint {
-  color: #ffc107;
-  font-weight: normal;
-  font-size: 0.9rem;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-/* Zsír decision area */
-.zsir-decision {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
 
 .btn-take {
   background: #4caf50;
@@ -247,62 +188,6 @@
   transform: scale(1.05);
 }
 
-.pile-owner {
-  color: #888;
-  font-size: 0.85rem;
-  margin-left: 0.5rem;
-}
-
-/* Won cards info */
-.won-cards-info {
-  display: flex;
-  justify-content: space-around;
-  width: 100%;
-  color: #888;
-  font-size: 0.9rem;
-  padding: 0.5rem;
-  background: #2d2d2d;
-  border-radius: 8px;
-}
-
-/* Debug section */
-.debug-info {
-  width: 100%;
-  margin-top: 1rem;
-}
-
-.debug-info details {
-  background: #1a1a2e;
-  border-radius: 8px;
-  padding: 0.5rem;
-}
-
-.debug-info summary {
-  cursor: pointer;
-  color: #888;
-  font-size: 0.85rem;
-  padding: 0.25rem;
-}
-
-.debug-section {
-  padding: 0.5rem;
-  border-bottom: 1px solid #333;
-  font-size: 0.8rem;
-}
-
-.debug-section:last-child {
-  border-bottom: none;
-}
-
-.debug-section strong {
-  color: #667eea;
-}
-
-.debug-cards {
-  color: #aaa;
-  margin-top: 0.25rem;
-  word-break: break-all;
-}
 
 /* Mobile-first responsive design */
 @media (max-width: 400px) {
@@ -317,16 +202,9 @@
     gap: 0.25rem;
   }
 
-  .zsirozas .scores {
+  .zsirozas .score-left,
+  .zsirozas .score-right {
     font-size: 0.9rem;
-  }
-
-  .zsirozas .deck-info {
-    font-size: 0.85rem;
-  }
-
-  .zsirozas .game-status {
-    display: none; /* Hide redundant status on mobile */
   }
 
   .hungarian-card {
@@ -357,44 +235,16 @@
   }
 
   .pile-area {
-    min-height: 90px;
     padding: 0.5rem;
   }
 
   .pile {
-    min-height: 60px;
-  }
-
-  .empty-pile {
-    height: 60px;
+    height: 105px; /* Fixed height for card */
   }
 
   .hand-label {
     font-size: 0.8rem;
     margin-bottom: 0.25rem;
-  }
-
-  .turn-indicator {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-  }
-
-  .turn-indicator .hint {
-    font-size: 0.8rem;
-    display: block;
-    margin-top: 0.25rem;
-  }
-
-  .won-cards-info {
-    font-size: 0.75rem;
-    padding: 0.4rem;
-    flex-direction: column;
-    gap: 0.2rem;
-    text-align: center;
-  }
-
-  .zsir-decision {
-    gap: 0.5rem;
   }
 
   .btn-pass, .btn-take {
@@ -403,20 +253,11 @@
   }
 
   .pile-card-wrapper {
-    margin-left: -35px !important;
+    margin-left: -40px !important;
   }
 
   .pile-card-wrapper:first-child {
     margin-left: 0 !important;
-  }
-
-  .pile-card-owner {
-    font-size: 0.6rem;
-    padding: 0.15rem 0.35rem;
-  }
-
-  .debug-info {
-    margin-top: 0.5rem;
   }
 }
 

@@ -56,10 +56,10 @@ export const ZSIROZAS_VALUES: Record<Rank, number> = {
   '8': 0,
   '9': 0,
   '10': 10,
-  'also': 2,
-  'felso': 3,
-  'kiraly': 4,
-  'asz': 11
+  'also': 0,
+  'felso': 0,
+  'kiraly': 0,
+  'asz': 10
 }
 
 // Snapszer point values

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { usePlayerName } from '../contexts/PlayerNameContext'
 import './Connect4.css'
 
 type Cell = 'red' | 'yellow' | null
@@ -99,8 +99,7 @@ const getAIMove = (board: Board): number => {
 }
 
 export default function Connect4() {
-  const { user } = useAuth()
-  const playerName = user?.displayName || 'Te'
+  const { playerName } = usePlayerName()
   const [board, setBoard] = useState<Board>(() =>
     Array(ROWS).fill(null).map(() => Array(COLS).fill(null))
   )

@@ -152,6 +152,91 @@
   position: relative;
 }
 
+.pile-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.pile-card-owner {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.pile-card-owner.player {
+  background: #667eea;
+  color: white;
+}
+
+.pile-card-owner.ai {
+  background: #ff6b6b;
+  color: white;
+}
+
+/* Turn indicator */
+.turn-indicator {
+  background: #2d2d2d;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  width: 100%;
+}
+
+.turn-indicator .thinking {
+  color: #ff6b6b;
+  animation: pulse 1s infinite;
+}
+
+.turn-indicator .your-turn {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.turn-indicator .hint {
+  color: #ffc107;
+  font-weight: normal;
+  font-size: 0.9rem;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Zsír decision area */
+.zsir-decision {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-take {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-take:hover {
+  background: #43a047;
+  transform: scale(1.05);
+}
+
+.pile-owner {
+  color: #888;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
 /* Won cards info */
 .won-cards-info {
   display: flex;

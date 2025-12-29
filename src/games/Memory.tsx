@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { usePlayerName } from '../contexts/PlayerNameContext'
 import './Memory.css'
 
 interface Card {
@@ -34,8 +34,7 @@ const createCards = (pairCount: number): Card[] => {
 }
 
 export default function Memory() {
-  const { user } = useAuth()
-  const playerName = user?.displayName || 'Te'
+  const { playerName } = usePlayerName()
   const [cards, setCards] = useState<Card[]>(() => createCards(8))
   const [flippedCards, setFlippedCards] = useState<number[]>([])
   const [moves, setMoves] = useState(0)

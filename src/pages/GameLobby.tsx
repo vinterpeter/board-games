@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { usePlayerName } from '../contexts/PlayerNameContext'
 
 const gameNames: Record<string, string> = {
   tictactoe: 'Amőba',
@@ -8,39 +9,48 @@ const gameNames: Record<string, string> = {
   connect4: 'Connect 4',
   memory: 'Memory',
   battleship: 'Torpedó',
+  zsirozas: 'Zsírozás',
+  snapszer: 'Snapszer',
 }
 
 export default function GameLobby() {
   const { gameId } = useParams<{ gameId: string }>()
   const navigate = useNavigate()
+  const { playerName: globalPlayerName } = usePlayerName()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showJoinModal, setShowJoinModal] = useState(false)
-  const [playerName, setPlayerName] = useState('')
+  const [localPlayerName, setLocalPlayerName] = useState('')
   const [roomCode, setRoomCode] = useState('')
 
   const gameName = gameNames[gameId || ''] || 'Játék'
 
+  // Use global player name if available, otherwise use local input
+  const effectivePlayerName = globalPlayerName !== 'Vendég' ? globalPlayerName : localPlayerName
+
   const handleCreateRoom = () => {
-    if (!playerName.trim()) return
+    if (!effectivePlayerName.trim()) return
 
     // Generate a simple room code
     const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase()
 
     // Store player info in sessionStorage for now
-    sessionStorage.setItem('playerName', playerName)
+    sessionStorage.setItem('playerName', effectivePlayerName)
     sessionStorage.setItem('isHost', 'true')
 
     navigate(`/room/${newRoomId}?game=${gameId}`)
   }
 
   const handleJoinRoom = () => {
-    if (!playerName.trim() || !roomCode.trim()) return
+    if (!effectivePlayerName.trim() || !roomCode.trim()) return
 
-    sessionStorage.setItem('playerName', playerName)
+    sessionStorage.setItem('playerName', effectivePlayerName)
     sessionStorage.setItem('isHost', 'false')
 
     navigate(`/room/${roomCode.toUpperCase()}?game=${gameId}`)
   }
+
+  // Check if we have a valid name already
+  const hasValidName = globalPlayerName !== 'Vendég'
 
   return (
     <div className="lobby-page">
@@ -67,16 +77,23 @@ export default function GameLobby() {
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Új szoba létrehozása</h2>
-            <div className="input-group">
-              <label>A neved:</label>
-              <input
-                type="text"
-                placeholder="Add meg a neved..."
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                autoFocus
-              />
-            </div>
+            {!hasValidName && (
+              <div className="input-group">
+                <label>A neved:</label>
+                <input
+                  type="text"
+                  placeholder="Add meg a neved..."
+                  value={localPlayerName}
+                  onChange={(e) => setLocalPlayerName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
+            {hasValidName && (
+              <p style={{ color: '#888', marginBottom: '1rem' }}>
+                Játékos: <strong style={{ color: 'white' }}>{globalPlayerName}</strong>
+              </p>
+            )}
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowCreateModal(false)}>
                 Mégse
@@ -94,16 +111,23 @@ export default function GameLobby() {
         <div className="modal-overlay" onClick={() => setShowJoinModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Csatlakozás szobához</h2>
-            <div className="input-group">
-              <label>A neved:</label>
-              <input
-                type="text"
-                placeholder="Add meg a neved..."
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                autoFocus
-              />
-            </div>
+            {!hasValidName && (
+              <div className="input-group">
+                <label>A neved:</label>
+                <input
+                  type="text"
+                  placeholder="Add meg a neved..."
+                  value={localPlayerName}
+                  onChange={(e) => setLocalPlayerName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
+            {hasValidName && (
+              <p style={{ color: '#888', marginBottom: '1rem' }}>
+                Játékos: <strong style={{ color: 'white' }}>{globalPlayerName}</strong>
+              </p>
+            )}
             <div className="input-group">
               <label>Szoba kód:</label>
               <input
@@ -112,6 +136,7 @@ export default function GameLobby() {
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 maxLength={6}
+                autoFocus={hasValidName}
               />
             </div>
             <div className="modal-actions">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { usePlayerName } from '../contexts/PlayerNameContext'
 import './TicTacToe.css'
 
 interface TicTacToeProps {
@@ -57,8 +57,7 @@ const checkWinnerStatic = (squares: Cell[]): Cell | 'draw' | null => {
 }
 
 export default function TicTacToe({ playerSymbol: _playerSymbol }: TicTacToeProps) {
-  const { user } = useAuth()
-  const playerName = user?.displayName || 'Te'
+  const { playerName } = usePlayerName()
   const [board, setBoard] = useState<Cell[]>(Array(9).fill(null))
   const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X')
   const [winner, setWinner] = useState<Cell | 'draw'>(null)

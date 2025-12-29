@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { usePlayerName } from '../contexts/PlayerNameContext'
 import './Battleship.css'
 
 type CellState = 'empty' | 'ship' | 'hit' | 'miss'
@@ -79,8 +79,7 @@ const countRemainingShips = (board: Board): number => {
 }
 
 export default function Battleship() {
-  const { user } = useAuth()
-  const playerName = user?.displayName || 'Te'
+  const { playerName } = usePlayerName()
   const [enemyBoard, setEnemyBoard] = useState<Board>(() => createBoardWithShips())
   const [playerBoard, setPlayerBoard] = useState<Board>(() => createBoardWithShips())
   const [playerShots, setPlayerShots] = useState<Board>(() => createEmptyBoard())

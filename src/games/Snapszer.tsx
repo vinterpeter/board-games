@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { usePlayerName } from '../contexts/PlayerNameContext'
 import type { Card, Suit } from './hungarianCards'
 import {
   createDeck,
@@ -117,8 +117,7 @@ const hasMarriage = (hand: Card[], suit: Suit): boolean => {
 }
 
 export default function Snapszer() {
-  const { user } = useAuth()
-  const playerName = user?.displayName || 'Te'
+  const { playerName } = usePlayerName()
   const [game, setGame] = useState<GameState>(initGame)
   const [isAIThinking, setIsAIThinking] = useState(false)
   const [selectedMarriage, setSelectedMarriage] = useState<Suit | null>(null)

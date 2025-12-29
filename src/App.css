@@ -1,0 +1,420 @@
+.app {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header p {
+  margin: 0.5rem 0 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1rem;
+}
+
+/* Game Grid */
+.games-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Game Card */
+.game-card {
+  background: #2d2d2d;
+  border-radius: 16px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  text-align: left;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  border-color: #667eea;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.game-card .icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.game-card h3 {
+  margin: 0 0 0.5rem;
+  color: white;
+  font-size: 1.3rem;
+}
+
+.game-card p {
+  margin: 0;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.game-card .players {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #444;
+  color: #667eea;
+  font-size: 0.85rem;
+}
+
+/* Section Title */
+.section-title {
+  color: white;
+  font-size: 1.5rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Game Categories - List View */
+.game-category {
+  margin-bottom: 2rem;
+}
+
+.category-title {
+  color: white;
+  font-size: 1.3rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #444;
+}
+
+.games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.game-list-item {
+  background: #2d2d2d;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.game-list-item:hover {
+  border-color: #667eea;
+  transform: translateX(5px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.game-list-item .game-icon {
+  font-size: 2.2rem;
+  min-width: 50px;
+  text-align: center;
+}
+
+.game-list-item .game-info {
+  flex: 1;
+}
+
+.game-list-item .game-info h3 {
+  margin: 0 0 0.25rem;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.game-list-item .game-info p {
+  margin: 0;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.game-list-item .game-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.game-list-item .game-meta .players {
+  color: #667eea;
+  font-size: 0.85rem;
+}
+
+.game-list-item .game-meta .status {
+  background: #ff6b6b;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+}
+
+.game-list-item.coming-soon {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.game-list-item.coming-soon::after {
+  display: none;
+}
+
+/* Lobby Page */
+.lobby-page {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.back-button {
+  background: transparent;
+  border: 1px solid #667eea;
+  color: #667eea;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background: #667eea;
+  color: white;
+}
+
+.lobby-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.lobby-header h1 {
+  color: white;
+  font-size: 2rem;
+  margin: 0 0 0.5rem;
+}
+
+.lobby-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: #2d2d2d;
+  color: white;
+  border: 2px solid #667eea;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #667eea;
+}
+
+/* Rooms List */
+.rooms-section h2 {
+  color: white;
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+}
+
+.rooms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.room-item {
+  background: #2d2d2d;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #444;
+  transition: all 0.2s;
+}
+
+.room-item:hover {
+  border-color: #667eea;
+}
+
+.room-info {
+  color: white;
+}
+
+.room-info .host {
+  font-weight: bold;
+}
+
+.room-info .players-count {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.join-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.join-btn:hover {
+  background: #764ba2;
+}
+
+/* Game Room */
+.game-room {
+  padding: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.game-room h1 {
+  color: white;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.game-status {
+  text-align: center;
+  color: #667eea;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.player-info {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 1rem;
+}
+
+.player {
+  padding: 0.75rem 1.5rem;
+  background: #2d2d2d;
+  border-radius: 8px;
+  color: white;
+}
+
+.player.active {
+  border: 2px solid #667eea;
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+}
+
+/* Coming Soon Badge */
+.coming-soon {
+  opacity: 0.5;
+  pointer-events: none;
+  position: relative;
+}
+
+.coming-soon::after {
+  content: 'Hamarosan';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #ff6b6b;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+}
+
+/* Input fields */
+.input-group {
+  margin-bottom: 1rem;
+}
+
+.input-group label {
+  display: block;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 2px solid #444;
+  background: #1a1a1a;
+  color: white;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #2d2d2d;
+  padding: 2rem;
+  border-radius: 16px;
+  max-width: 400px;
+  width: 90%;
+}
+
+.modal h2 {
+  color: white;
+  margin: 0 0 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}

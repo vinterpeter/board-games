@@ -1,0 +1,171 @@
+.zsirozas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.zsirozas .game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: #2d2d2d;
+  border-radius: 12px;
+}
+
+.zsirozas .scores {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #888;
+}
+
+.zsirozas .scores span.active {
+  color: #667eea;
+}
+
+.zsirozas .deck-info {
+  color: #888;
+  font-size: 1rem;
+}
+
+.zsirozas .game-status {
+  font-size: 1.1rem;
+  color: #667eea;
+  padding: 0.5rem 1rem;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.zsirozas .game-over {
+  text-align: center;
+  padding: 2rem;
+  background: #2d2d2d;
+  border-radius: 16px;
+}
+
+.zsirozas .game-over h2 {
+  color: #4caf50;
+  margin: 0 0 0.5rem;
+  font-size: 1.8rem;
+}
+
+.zsirozas .game-over p {
+  color: #888;
+  margin: 0 0 1.5rem;
+}
+
+/* Card hands */
+.ai-hand, .player-hand {
+  width: 100%;
+}
+
+.hand-label {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.cards {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Hungarian card styling */
+.hungarian-card {
+  width: 70px;
+  height: auto;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.hungarian-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hungarian-card.back {
+  background: transparent;
+}
+
+.hungarian-card.playable {
+  cursor: pointer;
+}
+
+.hungarian-card.playable:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.hungarian-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Pile area */
+.pile-area {
+  width: 100%;
+  min-height: 140px;
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pile-label {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.pile {
+  display: flex;
+  justify-content: center;
+  min-height: 100px;
+  position: relative;
+}
+
+.empty-pile {
+  color: #555;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+}
+
+.pile-card {
+  position: relative;
+}
+
+/* Won cards info */
+.won-cards-info {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  color: #888;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  background: #2d2d2d;
+  border-radius: 8px;
+}
+
+@media (min-width: 480px) {
+  .hungarian-card {
+    width: 90px;
+  }
+}

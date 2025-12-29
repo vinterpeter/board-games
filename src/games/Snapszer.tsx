@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import type { Card, Suit } from './hungarianCards'
 import {
   createDeck,
@@ -116,6 +117,8 @@ const hasMarriage = (hand: Card[], suit: Suit): boolean => {
 }
 
 export default function Snapszer() {
+  const { user } = useAuth()
+  const playerName = user?.displayName || 'Te'
   const [game, setGame] = useState<GameState>(initGame)
   const [isAIThinking, setIsAIThinking] = useState(false)
   const [selectedMarriage, setSelectedMarriage] = useState<Suit | null>(null)
@@ -409,7 +412,7 @@ export default function Snapszer() {
       <div className="game-header">
         <div className="scores">
           <span className={game.currentPlayer === 'player' ? 'active' : ''}>
-            👤 {game.playerPoints}/{WINNING_SCORE}
+            👤 {playerName}: {game.playerPoints}/{WINNING_SCORE}
           </span>
           <span> - </span>
           <span className={game.currentPlayer === 'ai' ? 'active' : ''}>
@@ -426,8 +429,8 @@ export default function Snapszer() {
 
       {game.gamePhase === 'finished' ? (
         <div className="game-over">
-          <h2>{game.roundWinner === 'player' ? '🎉 Te nyertél!' : '🤖 A gép nyert!'}</h2>
-          <p>👤 Te: {game.playerPoints} | 🤖 Gép: {game.aiPoints}</p>
+          <h2>{game.roundWinner === 'player' ? `🎉 ${playerName} nyertél!` : '🤖 A gép nyert!'}</h2>
+          <p>👤 {playerName}: {game.playerPoints} | 🤖 Gép: {game.aiPoints}</p>
           <button className="btn-primary" onClick={resetGame}>
             🔄 Új játék
           </button>
@@ -504,7 +507,7 @@ export default function Snapszer() {
 
           {/* Player hand */}
           <div className="player-hand">
-            <div className="hand-label">👤 Te ({game.playerHand.length} lap)</div>
+            <div className="hand-label">👤 {playerName} ({game.playerHand.length} lap)</div>
             <div className="cards">
               {game.playerHand.map(card => {
                 const leadCard = game.trickStarter === 'ai' ? game.currentTrick.ai : null

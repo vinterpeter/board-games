@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import './Memory.css'
 
 interface Card {
@@ -33,6 +34,8 @@ const createCards = (pairCount: number): Card[] => {
 }
 
 export default function Memory() {
+  const { user } = useAuth()
+  const playerName = user?.displayName || 'Te'
   const [cards, setCards] = useState<Card[]>(() => createCards(8))
   const [flippedCards, setFlippedCards] = useState<number[]>([])
   const [moves, setMoves] = useState(0)
@@ -220,14 +223,14 @@ export default function Memory() {
 
   const getWinMessage = () => {
     if (!vsAI) return { title: '🎉 Gratulálok!', subtitle: `${moves} lépésből sikerült!` }
-    if (scores.player > scores.ai) return { title: '🎉 Te nyertél!', subtitle: `${scores.player} - ${scores.ai}` }
+    if (scores.player > scores.ai) return { title: `🎉 ${playerName} nyertél!`, subtitle: `${scores.player} - ${scores.ai}` }
     if (scores.ai > scores.player) return { title: '🤖 A gép nyert!', subtitle: `${scores.ai} - ${scores.player}` }
     return { title: '🤝 Döntetlen!', subtitle: `${scores.player} - ${scores.ai}` }
   }
 
   const getTurnMessage = () => {
     if (currentPlayer === 'ai') return '🤖 A gép gondolkodik...'
-    return '👤 Te következel'
+    return `👤 ${playerName} következel`
   }
 
   return (
@@ -250,7 +253,7 @@ export default function Memory() {
       <div className="memory-header">
         {vsAI ? (
           <div className="scores">
-            <span className={currentPlayer === 'player' ? 'active' : ''}>👤 {scores.player}</span>
+            <span className={currentPlayer === 'player' ? 'active' : ''}>👤 {playerName}: {scores.player}</span>
             <span> - </span>
             <span className={currentPlayer === 'ai' ? 'active' : ''}>🤖 {scores.ai}</span>
           </div>

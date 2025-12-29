@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import './TicTacToe.css'
 
 interface TicTacToeProps {
@@ -56,6 +57,8 @@ const checkWinnerStatic = (squares: Cell[]): Cell | 'draw' | null => {
 }
 
 export default function TicTacToe({ playerSymbol: _playerSymbol }: TicTacToeProps) {
+  const { user } = useAuth()
+  const playerName = user?.displayName || 'Te'
   const [board, setBoard] = useState<Cell[]>(Array(9).fill(null))
   const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X')
   const [winner, setWinner] = useState<Cell | 'draw'>(null)
@@ -120,10 +123,10 @@ export default function TicTacToe({ playerSymbol: _playerSymbol }: TicTacToeProp
 
   const getStatusMessage = () => {
     if (winner === 'draw') return '🤝 Döntetlen!'
-    if (winner === 'X') return '🎉 Te nyertél!'
+    if (winner === 'X') return `🎉 ${playerName} nyertél!`
     if (winner === 'O') return vsAI ? '🤖 A gép nyert!' : '🎉 O nyert!'
     if (isAIThinking) return '🤖 A gép gondolkodik...'
-    if (vsAI) return currentPlayer === 'X' ? '❌ Te következel' : '⭕ Gép következik'
+    if (vsAI) return currentPlayer === 'X' ? `❌ ${playerName} következel` : '⭕ Gép következik'
     return `${currentPlayer === 'X' ? '❌' : '⭕'} ${currentPlayer} következik`
   }
 

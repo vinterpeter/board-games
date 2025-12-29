@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import type { Card } from './hungarianCards'
 import {
   createDeck,
@@ -47,6 +48,8 @@ const initGame = (): GameState => {
 }
 
 export default function Zsirozas() {
+  const { user } = useAuth()
+  const playerName = user?.displayName || 'Te'
   const [game, setGame] = useState<GameState>(initGame)
   const [isAIThinking, setIsAIThinking] = useState(false)
 
@@ -201,7 +204,7 @@ export default function Zsirozas() {
   const aiPoints = calculateZsirozasPoints(game.aiWon)
 
   const getWinner = () => {
-    if (playerPoints > aiPoints) return '🎉 Te nyertél!'
+    if (playerPoints > aiPoints) return `🎉 ${playerName} nyertél!`
     if (aiPoints > playerPoints) return '🤖 A gép nyert!'
     return '🤝 Döntetlen!'
   }
@@ -225,7 +228,7 @@ export default function Zsirozas() {
       <div className="game-header">
         <div className="scores">
           <span className={game.currentPlayer === 'player' ? 'active' : ''}>
-            👤 {playerPoints} pont
+            👤 {playerName}: {playerPoints} pont
           </span>
           <span> - </span>
           <span className={game.currentPlayer === 'ai' ? 'active' : ''}>
@@ -242,7 +245,7 @@ export default function Zsirozas() {
       {game.gamePhase === 'finished' ? (
         <div className="game-over">
           <h2>{getWinner()}</h2>
-          <p>👤 Te: {playerPoints} pont | 🤖 Gép: {aiPoints} pont</p>
+          <p>👤 {playerName}: {playerPoints} pont | 🤖 Gép: {aiPoints} pont</p>
           <button className="btn-primary" onClick={resetGame}>
             🔄 Új játék
           </button>
@@ -279,7 +282,7 @@ export default function Zsirozas() {
 
           {/* Player hand */}
           <div className="player-hand">
-            <div className="hand-label">👤 Te ({game.playerHand.length} lap)</div>
+            <div className="hand-label">👤 {playerName} ({game.playerHand.length} lap)</div>
             <div className="cards">
               {game.playerHand.map(card =>
                 renderCard(
@@ -293,8 +296,8 @@ export default function Zsirozas() {
 
           {/* Won cards info */}
           <div className="won-cards-info">
-            <span>👤 Bevitt: {game.playerWon.length} lap</span>
-            <span>🤖 Bevitt: {game.aiWon.length} lap</span>
+            <span>👤 {playerName} bevitt: {game.playerWon.length} lap</span>
+            <span>🤖 Gép bevitt: {game.aiWon.length} lap</span>
           </div>
         </>
       )}

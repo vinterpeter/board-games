@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import './Connect4.css'
 
 type Cell = 'red' | 'yellow' | null
@@ -98,6 +99,8 @@ const getAIMove = (board: Board): number => {
 }
 
 export default function Connect4() {
+  const { user } = useAuth()
+  const playerName = user?.displayName || 'Te'
   const [board, setBoard] = useState<Board>(() =>
     Array(ROWS).fill(null).map(() => Array(COLS).fill(null))
   )
@@ -209,10 +212,10 @@ export default function Connect4() {
 
   const getStatusMessage = () => {
     if (winner === 'draw') return '🤝 Döntetlen!'
-    if (winner === 'red') return vsAI ? '🎉 Te nyertél!' : '🔴 Piros nyert!'
+    if (winner === 'red') return vsAI ? `🎉 ${playerName} nyertél!` : '🔴 Piros nyert!'
     if (winner === 'yellow') return vsAI ? '🤖 A gép nyert!' : '🟡 Sárga nyert!'
     if (isAIThinking) return '🤖 A gép gondolkodik...'
-    if (vsAI) return currentPlayer === 'red' ? '🔴 Te következel' : '🟡 Gép következik'
+    if (vsAI) return currentPlayer === 'red' ? `🔴 ${playerName} következel` : '🟡 Gép következik'
     return currentPlayer === 'red' ? '🔴 Piros következik' : '🟡 Sárga következik'
   }
 

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import './Battleship.css'
 
 type CellState = 'empty' | 'ship' | 'hit' | 'miss'
@@ -78,6 +79,8 @@ const countRemainingShips = (board: Board): number => {
 }
 
 export default function Battleship() {
+  const { user } = useAuth()
+  const playerName = user?.displayName || 'Te'
   const [enemyBoard, setEnemyBoard] = useState<Board>(() => createBoardWithShips())
   const [playerBoard, setPlayerBoard] = useState<Board>(() => createBoardWithShips())
   const [playerShots, setPlayerShots] = useState<Board>(() => createEmptyBoard())
@@ -200,9 +203,9 @@ export default function Battleship() {
 
     setTimeout(() => {
       setIsPlayerTurn(true)
-      setMessage('A te köröd! Kattints az ellenség táblájára!')
+      setMessage(`${playerName} köröd! Kattints az ellenség táblájára!`)
     }, 1000)
-  }, [enemyShots, playerBoard])
+  }, [enemyShots, playerBoard, playerName])
 
   const handlePlayerShot = (row: number, col: number) => {
     if (!isPlayerTurn || gameOver) return
@@ -221,7 +224,7 @@ export default function Battleship() {
 
       if (countRemainingShips(newEnemyBoard) === 0) {
         setGameOver('player')
-        setMessage('🎉 Győztél! Elsüllyesztetted az ellenség flottáját!')
+        setMessage(`🎉 ${playerName} győztél! Elsüllyesztetted az ellenség flottáját!`)
         return
       }
     } else {
@@ -296,7 +299,7 @@ export default function Battleship() {
         </div>
 
         <div className="board-section">
-          <h3>🛡️ Te</h3>
+          <h3>🛡️ {playerName}</h3>
           <div className="battleship-board player">
             {playerBoard.map((row, rowIndex) => (
               <div key={rowIndex} className="battleship-row">

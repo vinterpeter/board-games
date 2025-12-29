@@ -5,6 +5,10 @@
     "rooms": {
       ".read": true,
       ".write": true
+    },
+    "games": {
+      ".read": true,
+      ".write": true
     }
   }
 }

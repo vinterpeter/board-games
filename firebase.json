@@ -1,5 +1,6 @@
 {
   "database": {
-    "rules": "database.rules.json"
+    "rules": "database.rules.json",
+    "target": "board-games-hu-default-rtdb"
   }
 }

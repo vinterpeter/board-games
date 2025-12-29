@@ -5,6 +5,7 @@ import Connect4 from '../games/Connect4'
 import Memory from '../games/Memory'
 import Battleship from '../games/Battleship'
 import Zsirozas from '../games/Zsirozas'
+import ZsirozasMultiplayer from '../games/ZsirozasMultiplayer'
 import Snapszer from '../games/Snapszer'
 
 export default function GameRoom() {
@@ -47,7 +48,7 @@ export default function GameRoom() {
       case 'battleship':
         return <Battleship />
       case 'zsirozas':
-        return <Zsirozas />
+        return <ZsirozasMultiplayer roomId={roomId || ''} isHost={isHost} />
       case 'snapszer':
         return <Snapszer />
       default:
@@ -74,7 +75,8 @@ export default function GameRoom() {
         <div style={{ width: '40px' }}></div> {/* Spacer for centering */}
       </div>
 
-      {opponent ? (
+      {/* Zsirozas handles its own waiting state via Firebase */}
+      {(opponent || gameId === 'zsirozas') ? (
         renderGame()
       ) : (
         <div style={{ textAlign: 'center', padding: '2rem' }}>

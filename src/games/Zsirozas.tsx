@@ -27,6 +27,7 @@ interface GameState {
   currentPlayer: Player       // Whose turn it is
   baseRank: Rank | null       // First card's rank in the round
   lastHitter: Player | null   // Who hit last (owns the pile)
+  roundStarter: Player | null // Who started (called) the round - only they can pass/take
   gamePhase: 'playing' | 'finished'
   message: string
 }
@@ -107,6 +108,7 @@ const initGame = (): GameState => {
     currentPlayer: 'player',
     baseRank: null,
     lastHitter: null,
+    roundStarter: null,
     gamePhase: 'playing',
     message: 'Kezdd a játékot! Tegyél le egy lapot.',
   }
@@ -119,7 +121,13 @@ export default function Zsirozas() {
 
   // Take the pile - lastHitter collects all cards
   const takePile = useCallback((state: GameState): GameState => {
-    const winner = state.lastHitter!
+    // Safety check - must have a lastHitter and pile
+    if (!state.lastHitter || state.pile.length === 0) {
+      console.log('takePile skipped - no lastHitter or empty pile')
+      return state
+    }
+
+    const winner = state.lastHitter
     const pileCards = state.pile.map(p => p.card)
 
     let newState: GameState = {
@@ -127,7 +135,8 @@ export default function Zsirozas() {
       pile: [],
       baseRank: null,
       lastHitter: null,
-      currentPlayer: winner,
+      roundStarter: null,  // Reset for new round
+      currentPlayer: winner,  // Winner starts next round
     }
 
     if (winner === 'player') {
@@ -146,13 +155,22 @@ export default function Zsirozas() {
       newState.gamePhase = 'finished'
     }
 
+    console.log('takePile result:', { winner, newCurrentPlayer: newState.currentPlayer })
     return newState
   }, [playerName])
 
-  // Player explicitly takes the pile (when they are lastHitter)
-  const playerTakesPile = () => {
-    if (game.lastHitter !== 'player' || game.pile.length === 0) return
-    setGame(prev => takePile(prev))
+  // Player passes - only available when player is roundStarter and not lastHitter
+  const playerPasses = () => {
+    if (game.roundStarter !== 'player' || game.lastHitter === 'player' || game.pile.length === 0 || game.currentPlayer !== 'player') return
+    setIsAIThinking(true)  // Block input
+    setGame(prev => ({
+      ...prev,
+      message: `${playerName} passzolt - gép viszi!`
+    }))
+    setTimeout(() => {
+      setGame(prev => takePile(prev))
+      setIsAIThinking(false)
+    }, 1000)
   }
 
   // Player plays a card
@@ -168,9 +186,10 @@ export default function Zsirozas() {
     }
 
     if (game.baseRank === null) {
-      // Starting new round - first card sets baseRank, player is lastHitter
+      // Starting new round - first card sets baseRank, player is lastHitter and roundStarter
       newState.baseRank = card.rank
       newState.lastHitter = 'player'
+      newState.roundStarter = 'player'
       newState.currentPlayer = 'ai'
       newState.message = `${playerName} hívott: ${cardName}`
     } else {
@@ -184,17 +203,18 @@ export default function Zsirozas() {
           : `🎯 ${playerName} ütött: ${cardName}!`
       } else {
         // Non-hitting card
-        if (game.lastHitter === 'player') {
-          // Player is already lastHitter, just adding a card, AI's turn
-          newState.currentPlayer = 'ai'
-          newState.message = `${playerName}: ${cardName}`
-        } else {
-          // Player is NOT lastHitter - this is a PASS, AI takes pile
-          newState.message = `${playerName} passzolt - gép viszi!`
+        newState.currentPlayer = 'ai'
+        newState.message = `${playerName}: ${cardName}`
+
+        // If player is responder and didn't hit, check if AI (roundStarter) auto-takes
+        if (game.roundStarter === 'ai' && game.lastHitter === 'ai') {
+          // AI is roundStarter and still lastHitter - auto takes pile
           setGame(newState)
+          setIsAIThinking(true)
           setTimeout(() => {
             setGame(prev => takePile(prev))
-          }, 1000)
+            setIsAIThinking(false)
+          }, 800)
           return
         }
       }
@@ -238,6 +258,7 @@ export default function Zsirozas() {
             pile: [{ card: cardToPlay, playedBy: 'ai' }],
             baseRank: cardToPlay.rank,
             lastHitter: 'ai',
+            roundStarter: 'ai',  // AI is the caller
             currentPlayer: 'player',
             message: `🤖 Gép hívott: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}`,
           }
@@ -248,78 +269,83 @@ export default function Zsirozas() {
 
         // AI responding to existing round
         const hittingCards = hand.filter(c => canHit(c, prevGame.baseRank))
+        const nonHittingCards = hand.filter(c => !canHit(c, prevGame.baseRank))
         const pileHasZsir = prevGame.pile.some(p => isZsir(p.card))
+        const isRoundStarter = prevGame.roundStarter === 'ai'
+        const isLastHitter = prevGame.lastHitter === 'ai'
 
-        // Decision: should AI hit?
-        // Hit if: pile has zsír OR AI is already lastHitter (defend position)
-        const shouldHit = hittingCards.length > 0 && (pileHasZsir || prevGame.lastHitter === 'ai')
-
-        // Decision: should AI take the pile? (if AI is lastHitter)
-        // Take if: pile has zsír and no need to defend
-        const shouldTake = prevGame.lastHitter === 'ai' && pileHasZsir && !hasHittingCard(hand, prevGame.baseRank)
-
-        if (shouldTake) {
-          // AI takes the pile
-          const afterTake = takePile(prevGame)
-          setIsAIThinking(false)
-          return afterTake
+        // Sort cards by value (prefer playing low-value cards)
+        const sortByValue = (cards: Card[]) => {
+          return [...cards].sort((a, b) => {
+            const aScore = isZsir(a) ? 100 : (a.rank === '7' ? 50 : 0)
+            const bScore = isZsir(b) ? 100 : (b.rank === '7' ? 50 : 0)
+            return aScore - bScore
+          })
         }
 
-        if (shouldHit) {
-          // HIT - prefer matching rank over 7
-          const matchingCard = hittingCards.find(c => c.rank === prevGame.baseRank)
-          cardToPlay = matchingCard || hittingCards[0]
-
-          newState = {
-            ...prevGame,
-            aiHand: hand.filter(c => c.id !== cardToPlay.id),
-            pile: [...prevGame.pile, { card: cardToPlay, playedBy: 'ai' }],
-            lastHitter: 'ai',
-            currentPlayer: 'player',
-            message: cardToPlay.rank === '7'
-              ? `🤖 Gép hetessel ütött!`
-              : `🤖 Gép ütött: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}!`,
-          }
-
-          setIsAIThinking(false)
-          return newState
-        } else {
-          // AI doesn't want to hit or can't hit
-
-          if (prevGame.lastHitter === 'ai') {
-            // AI is lastHitter - can just take the pile or add a card
-            // If pile has zsír, take it
-            if (pileHasZsir) {
-              const afterTake = takePile(prevGame)
-              setIsAIThinking(false)
-              return afterTake
-            }
-
-            // Otherwise, play a low-value card to continue
-            const nonHitting = hand.filter(c => !canHit(c, prevGame.baseRank))
-            if (nonHitting.length > 0) {
-              nonHitting.sort((a, b) => {
-                const aScore = isZsir(a) ? 100 : 0
-                const bScore = isZsir(b) ? 100 : 0
-                return aScore - bScore
-              })
-              cardToPlay = nonHitting[0]
-            } else {
-              // All cards are hitting cards - must play one
-              cardToPlay = hittingCards[0]
-              // This is actually a hit
+        // CASE 1: AI is the round starter (hívó)
+        if (isRoundStarter) {
+          if (isLastHitter) {
+            // AI called and is still the hitter - AUTO TAKE (responder didn't hit)
+            const afterTake = takePile(prevGame)
+            setIsAIThinking(false)
+            return afterTake
+          } else {
+            // AI called but player hit - AI can hit back or auto-pass if no hitting cards
+            if (hittingCards.length > 0 && pileHasZsir) {
+              // Hit back to defend zsír
+              cardToPlay = hittingCards.find(c => c.rank === prevGame.baseRank) || hittingCards[0]
               newState = {
                 ...prevGame,
                 aiHand: hand.filter(c => c.id !== cardToPlay.id),
                 pile: [...prevGame.pile, { card: cardToPlay, playedBy: 'ai' }],
                 lastHitter: 'ai',
                 currentPlayer: 'player',
-                message: `🤖 Gép: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}`,
+                message: cardToPlay.rank === '7'
+                  ? `🤖 Gép hetessel ütött!`
+                  : `🤖 Gép ütött: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}!`,
               }
               setIsAIThinking(false)
               return newState
+            } else {
+              // AUTO PASS - no hitting cards or doesn't want to hit
+              newState = {
+                ...prevGame,
+                currentPlayer: 'player',
+                message: hittingCards.length === 0
+                  ? `🤖 Gépnek nincs ütő lapja - ${playerName} viszi!`
+                  : `🤖 Gép passzolt.`,
+              }
+              setTimeout(() => {
+                setGame(prev => takePile(prev))
+                setIsAIThinking(false)
+              }, 1000)
+              return newState
             }
+          }
+        }
 
+        // CASE 2: AI is NOT the round starter (válaszoló) - MUST play a card
+        else {
+          // Decide what card to play
+          if (hittingCards.length > 0 && (pileHasZsir || isLastHitter)) {
+            // Hit if pile has zsír or to defend position
+            cardToPlay = hittingCards.find(c => c.rank === prevGame.baseRank) || hittingCards[0]
+            newState = {
+              ...prevGame,
+              aiHand: hand.filter(c => c.id !== cardToPlay.id),
+              pile: [...prevGame.pile, { card: cardToPlay, playedBy: 'ai' }],
+              lastHitter: 'ai',
+              currentPlayer: 'player',
+              message: cardToPlay.rank === '7'
+                ? `🤖 Gép hetessel ütött!`
+                : `🤖 Gép ütött: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}!`,
+            }
+            setIsAIThinking(false)
+            return newState
+          } else if (nonHittingCards.length > 0) {
+            // Play non-hitting card (doesn't want to hit or can't)
+            cardToPlay = sortByValue(nonHittingCards)[0]
             newState = {
               ...prevGame,
               aiHand: hand.filter(c => c.id !== cardToPlay.id),
@@ -330,45 +356,16 @@ export default function Zsirozas() {
             setIsAIThinking(false)
             return newState
           } else {
-            // AI is NOT lastHitter - must pass (play non-hitting card, player takes pile)
-            const nonHitting = hand.filter(c => !canHit(c, prevGame.baseRank))
-            if (nonHitting.length > 0) {
-              nonHitting.sort((a, b) => {
-                const aScore = isZsir(a) ? 100 : 0
-                const bScore = isZsir(b) ? 100 : 0
-                return aScore - bScore
-              })
-              cardToPlay = nonHitting[0]
-            } else {
-              // All cards hit - forced to hit (becomes lastHitter)
-              cardToPlay = hittingCards[0]
-              newState = {
-                ...prevGame,
-                aiHand: hand.filter(c => c.id !== cardToPlay.id),
-                pile: [...prevGame.pile, { card: cardToPlay, playedBy: 'ai' }],
-                lastHitter: 'ai',
-                currentPlayer: 'player',
-                message: `🤖 Gép ütött: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}!`,
-              }
-              setIsAIThinking(false)
-              return newState
-            }
-
-            // Real pass
+            // Only hitting cards - forced to hit
+            cardToPlay = sortByValue(hittingCards)[0]
             newState = {
               ...prevGame,
               aiHand: hand.filter(c => c.id !== cardToPlay.id),
               pile: [...prevGame.pile, { card: cardToPlay, playedBy: 'ai' }],
-              message: `🤖 Gép passzolt.`,
+              lastHitter: 'ai',
+              currentPlayer: 'player',
+              message: `🤖 Gép ütött: ${SUIT_SYMBOLS[cardToPlay.suit]} ${RANK_NAMES[cardToPlay.rank]}!`,
             }
-
-            setTimeout(() => {
-              setGame(prev => {
-                const afterTake = takePile(prev)
-                return afterTake
-              })
-            }, 1000)
-
             setIsAIThinking(false)
             return newState
           }
@@ -384,12 +381,45 @@ export default function Zsirozas() {
     }
   }, [game.currentPlayer, game.gamePhase, game.aiHand.length, isAIThinking, aiPlay])
 
-  // Handle edge cases
+  // Auto-take/auto-pass for player when they are roundStarter
+  useEffect(() => {
+    if (game.currentPlayer !== 'player' || game.gamePhase !== 'playing' || isAIThinking) return
+    if (game.roundStarter !== 'player' || game.pile.length === 0) return
+
+    if (game.lastHitter === 'player') {
+      // Player is roundStarter and lastHitter - AUTO TAKE
+      setTimeout(() => {
+        setGame(prev => takePile(prev))
+      }, 500)
+    } else if (!hasHittingCard(game.playerHand, game.baseRank)) {
+      // Player is roundStarter, not lastHitter, and has no hitting cards - AUTO PASS
+      setIsAIThinking(true)
+      setGame(prev => ({
+        ...prev,
+        message: `${playerName}nak nincs ütő lapja - gép viszi!`
+      }))
+      setTimeout(() => {
+        setGame(prev => takePile(prev))
+        setIsAIThinking(false)
+      }, 1000)
+    }
+  }, [game.currentPlayer, game.gamePhase, game.roundStarter, game.lastHitter, game.pile.length, game.playerHand, game.baseRank, isAIThinking, playerName, takePile])
+
+  // Handle edge cases and recovery
   useEffect(() => {
     if (game.gamePhase === 'finished') return
 
     const playerHasCards = game.playerHand.length > 0
     const aiHasCards = game.aiHand.length > 0
+
+    // Recovery: if currentPlayer is somehow invalid, fix it
+    if (game.currentPlayer !== 'player' && game.currentPlayer !== 'ai') {
+      console.error('Invalid currentPlayer detected, recovering...', game.currentPlayer)
+      // Default to whoever has cards, or player
+      const newCurrent = playerHasCards ? 'player' : aiHasCards ? 'ai' : 'player'
+      setGame(prev => ({ ...prev, currentPlayer: newCurrent }))
+      return
+    }
 
     // If neither has cards, game ends
     if (!playerHasCards && !aiHasCards) {
@@ -404,14 +434,12 @@ export default function Zsirozas() {
     // If current player has no cards but opponent does
     if (game.currentPlayer === 'player' && !playerHasCards && aiHasCards) {
       if (game.pile.length > 0 && game.lastHitter === 'player') {
-        // Player is lastHitter but has no cards - take the pile
         setGame(prev => takePile(prev))
       } else {
         setGame(prev => ({ ...prev, currentPlayer: 'ai' }))
       }
     } else if (game.currentPlayer === 'ai' && !aiHasCards && playerHasCards) {
       if (game.pile.length > 0 && game.lastHitter === 'ai') {
-        // AI is lastHitter but has no cards - take the pile
         setGame(prev => takePile(prev))
       } else {
         setGame(prev => ({ ...prev, currentPlayer: 'player' }))
@@ -447,9 +475,6 @@ export default function Zsirozas() {
     </div>
   )
 
-  // Can player take the pile?
-  const canTakePile = game.lastHitter === 'player' && game.pile.length > 0 && game.currentPlayer === 'player'
-
   return (
     <div className="zsirozas">
       <div className="game-header">
@@ -475,28 +500,45 @@ export default function Zsirozas() {
             <span className="thinking">🤖 A gép gondolkodik...</span>
           ) : game.currentPlayer === 'player' && game.playerHand.length > 0 ? (
             game.pile.length === 0 ? (
+              // No cards on table - start a new round
               <span className="your-turn">👆 Kezdj új kört - tegyél le egy lapot!</span>
-            ) : game.lastHitter === 'ai' ? (
-              <span className="your-turn">
-                ⚡ A gép ütött!
-                <span className="hint">
-                  {hasHittingCard(game.playerHand, game.baseRank)
-                    ? ` Üss vissza (${RANK_NAMES[game.baseRank!]} vagy 7) vagy passz más lappal!`
-                    : ` Nincs ütő lapod - tegyél le bármit (passz).`}
-                </span>
-              </span>
+            ) : game.roundStarter === 'player' ? (
+              // Player is the caller (hívó)
+              game.lastHitter === 'player' ? (
+                // Player called and is still the hitter - AUTO TAKE happening
+                <span className="your-turn">✅ Beviszed a paklit...</span>
+              ) : hasHittingCard(game.playerHand, game.baseRank) ? (
+                // Player called, AI hit, player CAN hit back
+                <div className="zsir-decision">
+                  <span className="your-turn">
+                    ⚡ A gép ütött!
+                    <span className="hint"> Üss vissza ({RANK_NAMES[game.baseRank!]} vagy 7) vagy passzolj!</span>
+                  </span>
+                  <button className="btn-pass" onClick={playerPasses}>
+                    ✋ Passz - gép viszi
+                  </button>
+                </div>
+              ) : (
+                // Player called, AI hit, player has NO hitting cards - AUTO PASS happening
+                <span className="your-turn">😔 Nincs ütő lapod - gép viszi...</span>
+              )
             ) : (
-              <div className="zsir-decision">
+              // Player is responder (válaszoló) - MUST play a card
+              game.lastHitter === 'player' ? (
                 <span className="your-turn">
                   ✅ Te vagy az ütő!
-                  <span className="hint"> Viheted a paklit vagy folytathatod.</span>
+                  <span className="hint"> Tegyél le egy lapot.</span>
                 </span>
-                {canTakePile && (
-                  <button className="btn-take" onClick={playerTakesPile}>
-                    🏆 Beviszem a paklit!
-                  </button>
-                )}
-              </div>
+              ) : (
+                <span className="your-turn">
+                  👆 Tegyél le egy lapot!
+                  <span className="hint">
+                    {hasHittingCard(game.playerHand, game.baseRank)
+                      ? ` Üthetsz: ${RANK_NAMES[game.baseRank!]} vagy 7`
+                      : ``}
+                  </span>
+                </span>
+              )
             )
           ) : null}
         </div>
@@ -564,6 +606,52 @@ export default function Zsirozas() {
           <div className="won-cards-info">
             <span>👤 Bevitt: {game.playerWon.length} lap ({playerPoints} zsír)</span>
             <span>🤖 Bevitt: {game.aiWon.length} lap ({aiPoints} zsír)</span>
+          </div>
+
+          {/* Debug info */}
+          <div className="debug-info">
+            <details>
+              <summary>🔧 Debug ({32 - game.deck.length - game.playerHand.length - game.aiHand.length - game.pile.length - game.playerWon.length - game.aiWon.length} hiányzik)</summary>
+              <div className="debug-section">
+                <strong>📚 Pakli ({game.deck.length}):</strong>
+                <div className="debug-cards">
+                  {game.deck.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}`).join(', ') || '-'}
+                </div>
+              </div>
+              <div className="debug-section">
+                <strong>👤 Játékos keze ({game.playerHand.length}):</strong>
+                <div className="debug-cards">
+                  {game.playerHand.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}`).join(', ') || '-'}
+                </div>
+              </div>
+              <div className="debug-section">
+                <strong>🤖 Gép keze ({game.aiHand.length}):</strong>
+                <div className="debug-cards">
+                  {game.aiHand.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}`).join(', ') || '-'}
+                </div>
+              </div>
+              <div className="debug-section">
+                <strong>🃏 Asztal ({game.pile.length}):</strong>
+                <div className="debug-cards">
+                  {game.pile.map(p => `${p.playedBy === 'player' ? '👤' : '🤖'}${SUIT_SYMBOLS[p.card.suit]}${RANK_NAMES[p.card.rank]}`).join(', ') || '-'}
+                </div>
+              </div>
+              <div className="debug-section">
+                <strong>👤 Bevitt ({game.playerWon.length}):</strong>
+                <div className="debug-cards">
+                  {game.playerWon.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}${isZsir(c) ? '🔥' : ''}`).join(', ') || '-'}
+                </div>
+              </div>
+              <div className="debug-section">
+                <strong>🤖 Gép bevitt ({game.aiWon.length}):</strong>
+                <div className="debug-cards">
+                  {game.aiWon.map(c => `${SUIT_SYMBOLS[c.suit]}${RANK_NAMES[c.rank]}${isZsir(c) ? '🔥' : ''}`).join(', ') || '-'}
+                </div>
+              </div>
+              <div className="debug-section">
+                <strong>State:</strong> currentPlayer={game.currentPlayer}, roundStarter={game.roundStarter || 'null'}, lastHitter={game.lastHitter || 'null'}, baseRank={game.baseRank || 'null'}
+              </div>
+            </details>
           </div>
         </>
       )}

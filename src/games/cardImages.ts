@@ -20,16 +20,19 @@ const rankToFile: Record<string, string> = {
   'asz': 'ace',
 }
 
+// Get the base URL for assets (handles GitHub Pages subdirectory)
+const BASE_URL = import.meta.env.BASE_URL || '/'
+
 // Get the image path for a specific card
 export function getCardImagePath(suit: string, rank: string): string {
   const suitFile = suitToFile[suit] || suit
   const rankFile = rankToFile[rank] || rank
-  return `/cards/${suitFile}-${rankFile}.png`
+  return `${BASE_URL}cards/${suitFile}-${rankFile}.png`
 }
 
 // Get the back of card image path
 export function getCardBackPath(): string {
-  return '/cards/back.png'
+  return `${BASE_URL}cards/back.png`
 }
 
 // Hungarian display names for suits

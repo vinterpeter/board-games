@@ -1,48 +1,16 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import { useAuth } from './AuthContext'
+import { createContext, useContext, type ReactNode } from 'react'
 
 interface PlayerNameContextType {
   playerName: string
-  setPlayerName: (name: string) => void
-  isCustomName: boolean
-  resetToDefault: () => void
 }
 
 const PlayerNameContext = createContext<PlayerNameContextType | null>(null)
 
-const STORAGE_KEY = 'customPlayerName'
+const PLAYER_NAME = 'Játékos'
 
 export function PlayerNameProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
-  const [customName, setCustomName] = useState<string | null>(() => {
-    return localStorage.getItem(STORAGE_KEY)
-  })
-
-  // Sync custom name to localStorage
-  useEffect(() => {
-    if (customName) {
-      localStorage.setItem(STORAGE_KEY, customName)
-    } else {
-      localStorage.removeItem(STORAGE_KEY)
-    }
-  }, [customName])
-
-  const playerName = customName || user?.displayName || 'Vendég'
-  const isCustomName = !!customName
-
-  const setPlayerName = (name: string) => {
-    const trimmed = name.trim()
-    if (trimmed) {
-      setCustomName(trimmed)
-    }
-  }
-
-  const resetToDefault = () => {
-    setCustomName(null)
-  }
-
   return (
-    <PlayerNameContext.Provider value={{ playerName, setPlayerName, isCustomName, resetToDefault }}>
+    <PlayerNameContext.Provider value={{ playerName: PLAYER_NAME }}>
       {children}
     </PlayerNameContext.Provider>
   )

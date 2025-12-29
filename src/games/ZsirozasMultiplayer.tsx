@@ -14,7 +14,6 @@ import {
   set,
   onValue,
   update,
-  get,
   isFirebaseConfigured,
 } from '../services/firebase'
 import './Zsirozas.css'
@@ -154,7 +153,6 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
   const [firebaseError, setFirebaseError] = useState(false)
   const myRole: PlayerRole = isHost ? 'host' : 'guest'
   const opponentRole: PlayerRole = isHost ? 'guest' : 'host'
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const aiPlayingRef = useRef(false)
   const dataReceivedRef = useRef(false)
 
@@ -235,6 +233,7 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
     if (!database || !game) return
 
     const interval = setInterval(() => {
+      if (!database) return
       const updatePath = myRole === 'host' ? 'host' : 'guest'
       update(ref(database, `${gamePath}/${updatePath}`), {
         lastActive: Date.now(),
@@ -378,6 +377,7 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
     if (game.currentPlayer === myRole) return // It's my turn, don't check opponent
 
     const checkTimeout = () => {
+      if (!database) return
       const timeSinceLastMove = Date.now() - game.lastMoveTime
 
       // Show warning at 45 seconds

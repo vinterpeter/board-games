@@ -4,7 +4,6 @@ import TicTacToe from '../games/TicTacToe'
 import Connect4 from '../games/Connect4'
 import Memory from '../games/Memory'
 import Battleship from '../games/Battleship'
-import Zsirozas from '../games/Zsirozas'
 import ZsirozasMultiplayer from '../games/ZsirozasMultiplayer'
 import Snapszer from '../games/Snapszer'
 

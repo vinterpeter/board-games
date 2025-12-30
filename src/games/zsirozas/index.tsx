@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
-import { usePlayerName } from '../contexts/PlayerNameContext'
-import type { Card, Rank } from './hungarianCards'
+import { usePlayerName } from '../../contexts/PlayerNameContext'
+import type { Card, Rank } from '../shared/hungarianCards'
 import {
   createDeck,
   shuffleDeck,
   SUIT_SYMBOLS,
   RANK_NAMES,
-} from './hungarianCards'
-import { getCardImagePath, getCardBackPath } from './cardImages'
-import './Zsirozas.css'
+} from '../shared/hungarianCards'
+import { getCardImagePath, getCardBackPath } from '../shared/cardImages'
+import './style.css'
 
 type Player = 'player' | 'ai'
 

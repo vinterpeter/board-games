@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { usePlayerName } from '../contexts/PlayerNameContext'
-import './TicTacToe.css'
+import { usePlayerName } from '../../contexts/PlayerNameContext'
+import './style.css'
 
 interface TicTacToeProps {
   playerSymbol?: 'X' | 'O'

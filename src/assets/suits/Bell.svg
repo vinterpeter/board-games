@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Csengő/Schellen - Bell (Hungarian card suit) -->
+  <!-- Top loop -->
+  <rect x="44" y="5" width="12" height="12" rx="4" fill="currentColor"/>
+  <!-- Bell body -->
+  <path d="M20 55
+           Q20 25 50 20
+           Q80 25 80 55
+           Q80 75 50 85
+           Q20 75 20 55 Z" fill="currentColor"/>
+  <!-- Inner shadow/hole -->
+  <ellipse cx="50" cy="50" rx="20" ry="24" fill="none" stroke="rgba(0,0,0,0.3)" stroke-width="6"/>
+  <!-- Clapper -->
+  <circle cx="50" cy="80" r="7" fill="currentColor"/>
+  <rect x="48" y="60" width="4" height="22" fill="currentColor"/>
+  <!-- Highlight -->
+  <path d="M30 40 Q35 30 45 28" stroke="rgba(255,255,255,0.3)" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>

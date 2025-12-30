@@ -1,25 +1,33 @@
 import { useState, useEffect } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
-import TicTacToe from '../games/TicTacToe'
-import Connect4 from '../games/Connect4'
-import Memory from '../games/Memory'
-import Battleship from '../games/Battleship'
-import ZsirozasMultiplayer from '../games/ZsirozasMultiplayer'
-import Snapszer from '../games/Snapszer'
+import { useParams, useSearchParams } from 'react-router-dom'
+import TicTacToe from '../games/tictactoe'
+import Connect4 from '../games/connect4'
+import Memory from '../games/memory'
+import Battleship from '../games/battleship'
+import ZsirozasMultiplayer from '../games/zsirozas/ZsirozasMultiplayer'
+import Snapszer from '../games/snapszer'
+import GameHeader from '../components/GameHeader'
+import RoomCode from '../components/RoomCode'
+import SuitIcon from '../components/SuitIcon'
+
+const gameNames: Record<string, React.ReactNode> = {
+  tictactoe: '⭕ Amőba',
+  connect4: '🔵 Connect 4',
+  memory: '🃏 Memory',
+  battleship: '🚢 Torpedó',
+  zsirozas: <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><SuitIcon suit="acorn" size={28} /> Zsírozás</span>,
+  snapszer: <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><SuitIcon suit="heart" size={28} /> Snapszer</span>,
+}
 
 export default function GameRoom() {
   const { roomId } = useParams<{ roomId: string }>()
   const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
   const gameId = searchParams.get('game')
 
   const [isHost] = useState(() => sessionStorage.getItem('isHost') === 'true')
   const [opponent, setOpponent] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    // Simulate opponent joining after 1 second (for demo)
-    // This will be replaced with Firebase real-time sync
     if (isHost) {
       const timer = setTimeout(() => {
         setOpponent('Ellenfél')
@@ -29,12 +37,6 @@ export default function GameRoom() {
       setOpponent('Host')
     }
   }, [isHost])
-
-  const copyRoomCode = () => {
-    navigator.clipboard.writeText(roomId || '')
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   const renderGame = () => {
     switch (gameId) {
@@ -55,26 +57,10 @@ export default function GameRoom() {
     }
   }
 
-  const gameName =
-    gameId === 'tictactoe' ? '⭕ Amőba' :
-    gameId === 'connect4' ? '🔵 Connect 4' :
-    gameId === 'memory' ? '🃏 Memory' :
-    gameId === 'battleship' ? '🚢 Torpedó' :
-    gameId === 'zsirozas' ? '🌰 Zsírozás' :
-    gameId === 'snapszer' ? '❤️ Snapszer' :
-    'Játék'
-
   return (
     <div className="game-room">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-        <button className="back-button" onClick={() => navigate('/')} style={{ margin: 0 }}>
-          ←
-        </button>
-        <h1 style={{ margin: 0, fontSize: '1.3rem' }}>{gameName}</h1>
-        <div style={{ width: '40px' }}></div> {/* Spacer for centering */}
-      </div>
+      <GameHeader title={gameNames[gameId || ''] || 'Játék'} />
 
-      {/* Zsirozas handles its own waiting state via Firebase */}
       {(opponent || gameId === 'zsirozas') ? (
         renderGame()
       ) : (
@@ -88,32 +74,7 @@ export default function GameRoom() {
         </div>
       )}
 
-      {/* Room code at the bottom */}
-      <div style={{ textAlign: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #333' }}>
-        <span style={{ color: '#666', fontSize: '0.85rem' }}>Szoba: </span>
-        <code style={{
-          background: '#2d2d2d',
-          padding: '0.25rem 0.5rem',
-          borderRadius: '4px',
-          fontSize: '0.85rem',
-          color: '#667eea'
-        }}>
-          {roomId}
-        </code>
-        <button
-          onClick={copyRoomCode}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            padding: '0.25rem',
-            color: copied ? '#4caf50' : '#666',
-            cursor: 'pointer',
-            marginLeft: '0.25rem'
-          }}
-        >
-          {copied ? '✓' : '📋'}
-        </button>
-      </div>
+      <RoomCode roomId={roomId || ''} />
     </div>
   )
 }

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Zöld/Laub - Leaf (Hungarian card suit) -->
+  <!-- Main leaf shape -->
+  <path d="M50 8
+           Q85 25 80 55
+           Q75 80 50 95
+           Q25 80 20 55
+           Q15 25 50 8 Z" fill="currentColor"/>
+  <!-- Center vein -->
+  <path d="M50 20 L50 85" stroke="rgba(0,0,0,0.2)" stroke-width="3" fill="none"/>
+  <!-- Side veins -->
+  <path d="M50 35 Q32 42 25 52" stroke="rgba(0,0,0,0.15)" stroke-width="2" fill="none"/>
+  <path d="M50 35 Q68 42 75 52" stroke="rgba(0,0,0,0.15)" stroke-width="2" fill="none"/>
+  <path d="M50 50 Q35 56 28 65" stroke="rgba(0,0,0,0.15)" stroke-width="2" fill="none"/>
+  <path d="M50 50 Q65 56 72 65" stroke="rgba(0,0,0,0.15)" stroke-width="2" fill="none"/>
+  <path d="M50 65 Q40 70 35 78" stroke="rgba(0,0,0,0.15)" stroke-width="2" fill="none"/>
+  <path d="M50 65 Q60 70 65 78" stroke="rgba(0,0,0,0.15)" stroke-width="2" fill="none"/>
+  <!-- Highlight -->
+  <path d="M35 25 Q42 18 50 15" stroke="rgba(255,255,255,0.25)" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>

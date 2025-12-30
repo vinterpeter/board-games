@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
-import { usePlayerName } from '../contexts/PlayerNameContext'
-import './Battleship.css'
+import { usePlayerName } from '../../contexts/PlayerNameContext'
+import './style.css'
 
 type CellState = 'empty' | 'ship' | 'hit' | 'miss'
 type Board = CellState[][]

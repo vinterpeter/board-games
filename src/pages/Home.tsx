@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import type { Game, GameCategory } from '../types'
+import SuitIcon from '../components/SuitIcon'
 
 const games: Game[] = [
   // Táblajátékok
@@ -98,6 +99,17 @@ const categoryNames: Record<GameCategory, string> = {
 
 const categoryOrder: GameCategory[] = ['board', 'card', 'strategy', 'party']
 
+// Custom icon renderer for card games
+const renderGameIcon = (game: Game) => {
+  if (game.id === 'zsirozas') {
+    return <SuitIcon suit="acorn" size={32} />
+  }
+  if (game.id === 'snapszer') {
+    return <SuitIcon suit="heart" size={32} />
+  }
+  return game.icon
+}
+
 export default function Home() {
   const navigate = useNavigate()
   const { user, loading, signIn, logOut } = useAuth()
@@ -156,7 +168,7 @@ export default function Home() {
                   className={`game-list-item ${!game.available ? 'coming-soon' : ''}`}
                   onClick={() => handleGameClick(game)}
                 >
-                  <div className="game-icon">{game.icon}</div>
+                  <div className="game-icon">{renderGameIcon(game)}</div>
                   <div className="game-info">
                     <h3>{game.name}</h3>
                     <p>{game.description}</p>

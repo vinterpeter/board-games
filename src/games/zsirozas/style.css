@@ -56,6 +56,45 @@
   50% { opacity: 0.7; }
 }
 
+/* Turn indicator */
+.turn-indicator {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.turn-indicator.my-turn {
+  background: linear-gradient(135deg, #4caf50 0%, #43a047 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  animation: glow-green 1.5s ease-in-out infinite;
+}
+
+.turn-indicator.opponent-turn {
+  background: #2d2d2d;
+  color: #888;
+}
+
+@keyframes glow-green {
+  0%, 100% { box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4); }
+  50% { box-shadow: 0 4px 20px rgba(76, 175, 80, 0.7); }
+}
+
+/* Game message */
+.game-message {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: #1a1a2e;
+  border-radius: 8px;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
 .zsirozas .game-over {
   text-align: center;
   padding: 2rem;
@@ -275,6 +314,16 @@
   .btn-pass, .btn-take {
     padding: 0.4rem 1rem;
     font-size: 0.85rem;
+  }
+
+  .turn-indicator {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .game-message {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
   }
 
   .pile-card-wrapper {

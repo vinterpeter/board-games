@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { usePlayerName } from '../contexts/PlayerNameContext'
-import type { Card, Rank } from './hungarianCards'
+import { usePlayerName } from '../../contexts/PlayerNameContext'
+import type { Card, Rank } from '../shared/hungarianCards'
 import {
   createDeck,
   shuffleDeck,
   SUIT_SYMBOLS,
   RANK_NAMES,
-} from './hungarianCards'
-import { getCardImagePath, getCardBackPath } from './cardImages'
+} from '../shared/hungarianCards'
+import { getCardImagePath, getCardBackPath } from '../shared/cardImages'
 import {
   database,
   ref,
@@ -15,8 +15,8 @@ import {
   onValue,
   update,
   isFirebaseConfigured,
-} from '../services/firebase'
-import './Zsirozas.css'
+} from '../../services/firebase'
+import './style.css'
 
 type PlayerRole = 'host' | 'guest'
 
@@ -26,6 +26,7 @@ interface PileCard {
 }
 
 interface PlayerInfo {
+  id: string  // Unique ID per player connection
   name: string
   connected: boolean
   lastActive: number
@@ -48,6 +49,9 @@ interface GameState {
   message: string
   host: PlayerInfo
   guest: PlayerInfo | null
+  // Rematch system
+  rematchRequestedBy: PlayerRole | null
+  rematchDeclinedBy: PlayerRole | null
 }
 
 interface ZsirozasMultiplayerProps {
@@ -111,7 +115,7 @@ const drawCards = (state: GameState): GameState => {
   return newState
 }
 
-const initGame = (hostName: string): GameState => {
+const initGame = (hostName: string, hostId: string): GameState => {
   const deck = shuffleDeck(createDeck())
   const hostHand = deck.slice(0, HAND_SIZE)
   const guestHand = deck.slice(HAND_SIZE, HAND_SIZE * 2)
@@ -132,29 +136,37 @@ const initGame = (hostName: string): GameState => {
     lastMoveTime: Date.now(),
     message: 'Várakozás a másik játékosra...',
     host: {
+      id: hostId,
       name: hostName,
       connected: true,
       lastActive: Date.now(),
       aiTakeover: false,
     },
     guest: null,
+    rematchRequestedBy: null,
+    rematchDeclinedBy: null,
   }
 }
 
 // Import the single-player Zsirozas for fallback
-import ZsirozasSinglePlayer from './Zsirozas'
+import ZsirozasSinglePlayer from '.'
 
 export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultiplayerProps) {
   const { playerName } = usePlayerName()
   const [game, setGame] = useState<GameState | null>(null)
-  const [isMyTurn, setIsMyTurn] = useState(false)
+  const [myRole, setMyRole] = useState<PlayerRole | null>(null)
+  // Removed isMyTurn state - computed directly from game state instead
   const [timeoutWarning, setTimeoutWarning] = useState(false)
   const [opponentAiTakeover, setOpponentAiTakeover] = useState(false)
   const [firebaseError, setFirebaseError] = useState(false)
-  const myRole: PlayerRole = isHost ? 'host' : 'guest'
-  const opponentRole: PlayerRole = isHost ? 'guest' : 'host'
+  const [duplicatePlayer] = useState(false)
+  const [roomFull, setRoomFull] = useState(false)
+  const opponentRole: PlayerRole = myRole === 'host' ? 'guest' : 'host'
   const aiPlayingRef = useRef(false)
   const dataReceivedRef = useRef(false)
+  const roleAssignedRef = useRef(false)
+  // Unique ID per component instance to handle shared sessionStorage in same browser
+  const playerIdRef = useRef(Math.random().toString(36).substring(2, 10))
 
   // Game path for Firebase - use rooms path since it has public access in Firebase rules
   const gamePath = `rooms/${roomId}/game`
@@ -162,6 +174,7 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
   // Initialize or join game
   useEffect(() => {
     dataReceivedRef.current = false
+    roleAssignedRef.current = false
 
     if (!database || !isFirebaseConfigured()) {
       setFirebaseError(true)
@@ -174,42 +187,85 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
       const data = snapshot.val() as GameState | null
 
       if (!data) {
-        // Game doesn't exist - host creates it
-        if (isHost) {
-          const newGame = initGame(playerName)
+        // Game doesn't exist - create it (I'm the host)
+        if (!roleAssignedRef.current) {
+          roleAssignedRef.current = true
+          setMyRole('host')
+          const newGame = initGame(playerName, playerIdRef.current)
           set(gameRef, newGame).catch(() => setFirebaseError(true))
         }
         return
       }
 
-      // Guest joining
-      if (!isHost && data.status === 'waiting' && !data.guest) {
-        update(gameRef, {
-          status: 'playing',
-          message: `${data.host.name} kezd!`,
-          lastMoveTime: Date.now(),
-          guest: {
-            name: playerName,
-            connected: true,
-            lastActive: Date.now(),
-            aiTakeover: false,
-          },
-        }).catch(() => setFirebaseError(true))
-        return
+      // Determine my role based on game state
+      if (!roleAssignedRef.current) {
+        if (data.status === 'waiting' && !data.guest) {
+          // Game exists but no guest yet
+          // Check if this is the same player (host) reconnecting
+          if (data.host.name === playerName) {
+            roleAssignedRef.current = true
+            setMyRole('host')
+            // Update host ID to current session
+            update(gameRef, {
+              'host.id': playerIdRef.current,
+              'host.lastActive': Date.now(),
+              'host.connected': true,
+            }).catch(() => {})
+            return
+          }
+          // New guest joining
+          roleAssignedRef.current = true
+          setMyRole('guest')
+          update(gameRef, {
+            status: 'playing',
+            message: `${data.host.name} kezd!`,
+            lastMoveTime: Date.now(),
+            guest: {
+              id: playerIdRef.current,
+              name: playerName,
+              connected: true,
+              lastActive: Date.now(),
+              aiTakeover: false,
+            },
+          }).catch(() => setFirebaseError(true))
+          return
+        } else {
+          // Game already has both players - figure out who I am
+          roleAssignedRef.current = true
+          if (data.host.id === playerIdRef.current) {
+            setMyRole('host')
+          } else if (data.guest?.id === playerIdRef.current) {
+            setMyRole('guest')
+          } else if (data.host.name === playerName) {
+            // Reconnecting as host - update session ID
+            setMyRole('host')
+            update(gameRef, {
+              'host.id': playerIdRef.current,
+              'host.lastActive': Date.now(),
+              'host.connected': true,
+            }).catch(() => {})
+          } else if (data.guest?.name === playerName) {
+            // Reconnecting as guest - update session ID
+            setMyRole('guest')
+            update(gameRef, {
+              'guest.id': playerIdRef.current,
+              'guest.lastActive': Date.now(),
+              'guest.connected': true,
+            }).catch(() => {})
+          } else {
+            // I'm neither host nor guest - room is full
+            if (data.guest != null) {
+              setRoomFull(true)
+              return
+            }
+            // Fallback - use the isHost prop
+            setMyRole(isHost ? 'host' : 'guest')
+          }
+        }
       }
 
       dataReceivedRef.current = true
       setGame(data)
-
-      // Check if it's my turn
-      const myTurn = data.currentPlayer === myRole && data.status === 'playing'
-      setIsMyTurn(myTurn)
-
-      // Check opponent AI takeover
-      const opponent = myRole === 'host' ? data.guest : data.host
-      if (opponent?.aiTakeover) {
-        setOpponentAiTakeover(true)
-      }
     }, (error) => {
       console.error('Firebase error:', error)
       setFirebaseError(true)
@@ -226,11 +282,24 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
       unsubscribe()
       clearTimeout(loadTimeout)
     }
-  }, [gamePath, isHost, playerName, myRole])
+  }, [gamePath, isHost, playerName])
+
+  // Compute isMyTurn directly from game state (not in state to avoid lag)
+  const isMyTurn = game !== null && myRole !== null &&
+    game.currentPlayer === myRole && game.status === 'playing'
+
+  // Check opponent AI takeover
+  useEffect(() => {
+    if (!game || !myRole) return
+    const opponent = myRole === 'host' ? game.guest : game.host
+    if (opponent?.aiTakeover) {
+      setOpponentAiTakeover(true)
+    }
+  }, [game, myRole])
 
   // Update my connection status periodically
   useEffect(() => {
-    if (!database || !game) return
+    if (!database || !game || !myRole) return
 
     const interval = setInterval(() => {
       if (!database) return
@@ -264,9 +333,9 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
     }
 
     if (winner === 'host') {
-      newState.hostWon = [...newState.hostWon, ...pileCards]
+      newState.hostWon = [...(newState.hostWon || []), ...pileCards]
     } else {
-      newState.guestWon = [...newState.guestWon, ...pileCards]
+      newState.guestWon = [...(newState.guestWon || []), ...pileCards]
     }
 
     newState = drawCards(newState)
@@ -296,7 +365,7 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
     let cardToPlay: Card
     let newState: GameState
 
-    if (game.baseRank === null) {
+    if (game.baseRank == null) {
       // Start new round - play lowest value card
       hand.sort((a, b) => {
         const aScore = isZsir(a) ? 100 : (a.rank === '7' ? 50 : 0)
@@ -401,14 +470,31 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
     return () => clearInterval(interval)
   }, [game, database, gamePath, myRole, opponentRole, triggerAIPlay])
 
+  // Immediate AI play when opponent is AI and it's their turn
+  useEffect(() => {
+    if (!game || game.status !== 'playing' || !database || !myRole) return
+    if (game.currentPlayer === myRole) return // It's my turn
+
+    const opponent = myRole === 'host' ? game.guest : game.host
+    if (!opponent?.aiTakeover) return // Opponent is not AI
+
+    // AI opponent needs to play - trigger with small delay for UX
+    const timeout = setTimeout(() => {
+      triggerAIPlay()
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [game, database, myRole, triggerAIPlay])
+
   // Play card (for human player)
   const playCard = async (card: Card) => {
-    if (!game || !database || !isMyTurn || game.status !== 'playing') return
+    if (!game || !database || !isMyTurn || !myRole || game.status !== 'playing') return
 
     const gameRef = ref(database, gamePath)
     const currentHand = (myRole === 'host' ? game.hostHand : game.guestHand) || []
     const currentPile = game.pile || []
     const myName = myRole === 'host' ? game.host.name : game.guest?.name || playerName
+    const opponentName = myRole === 'host' ? game.guest?.name || 'Vendég' : game.host.name
     const cardName = `${SUIT_SYMBOLS[card.suit]} ${RANK_NAMES[card.rank]}`
 
     let newState: GameState = {
@@ -418,72 +504,154 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
       lastMoveTime: Date.now(),
     }
 
-    if (game.baseRank === null) {
+    if (game.baseRank == null) {
       // Starting new round
       newState.baseRank = card.rank
       newState.lastHitter = myRole
       newState.roundStarter = myRole
       newState.currentPlayer = opponentRole
       newState.message = `${myName} hívott: ${cardName}`
+    } else if (canHit(card, game.baseRank)) {
+      // Responding with a hitting card - I become lastHitter
+      newState.lastHitter = myRole
+      newState.currentPlayer = opponentRole
+      newState.message = card.rank === '7'
+        ? `🎯 ${myName} hetessel ütött!`
+        : `🎯 ${myName} ütött: ${cardName}!`
     } else {
-      // Responding
-      if (canHit(card, game.baseRank)) {
-        newState.lastHitter = myRole
-        newState.currentPlayer = opponentRole
-        newState.message = card.rank === '7'
-          ? `🎯 ${myName} hetessel ütött!`
-          : `🎯 ${myName} ütött: ${cardName}!`
-      } else {
-        newState.currentPlayer = opponentRole
-        newState.message = `${myName}: ${cardName}`
-
-        // Check if opponent (roundStarter) auto-takes
-        if (game.roundStarter === opponentRole && game.lastHitter === opponentRole) {
-          newState = takePile(newState)
-        }
-      }
+      // Responding with a non-hitting card - lastHitter takes the pile
+      newState.message = `${myName} nem ütött - ${opponentName} viszi!`
+      // The lastHitter (roundStarter or whoever hit last) takes the pile
+      newState = takePile(newState)
     }
 
     await set(gameRef, newState)
   }
 
-  // Pass (when I'm roundStarter and opponent hit)
+  // Pass - only when I'm roundStarter and opponent hit but I choose not to hit back
   const playerPasses = async () => {
-    if (!game || !database || !isMyTurn) return
+    if (!game || !database || !isMyTurn || !myRole) return
     const currentPile = game.pile || []
-    if (game.roundStarter !== myRole || game.lastHitter === myRole || currentPile.length === 0) return
+    if (currentPile.length === 0 || game.baseRank == null) return
+    if (game.roundStarter !== myRole || game.lastHitter === myRole) return
+
+    const myName = myRole === 'host' ? game.host.name : game.guest?.name || playerName
+    const opponentName = myRole === 'host' ? game.guest?.name || 'Vendég' : game.host.name
 
     const gameRef = ref(database, gamePath)
     const newState = takePile({ ...game, lastMoveTime: Date.now() })
+    newState.message = `${myName} passzolt - ${opponentName} viszi a paklit!`
     await set(gameRef, newState)
   }
 
-  // Auto-take when I'm roundStarter and lastHitter
+  // Track which game state we've processed auto-action for
+  const lastAutoActionStateRef = useRef<string | null>(null)
+  const autoActionInProgressRef = useRef(false)
+
+  // Auto-take/auto-pass logic - only runs when it's MY turn and I can't make a move
   useEffect(() => {
-    if (!game || !database || game.status !== 'playing') return
-    if (game.currentPlayer !== myRole) return
+    if (!game || !database || !myRole || game.status !== 'playing') return
+    if (game.currentPlayer !== myRole) {
+      // Not my turn - reset the tracking
+      lastAutoActionStateRef.current = null
+      autoActionInProgressRef.current = false
+      return
+    }
+
+    // If auto-action is already in progress, don't start another
+    if (autoActionInProgressRef.current) return
+
     const currentPile = game.pile || []
-    if (game.roundStarter !== myRole || currentPile.length === 0) return
+    if (currentPile.length === 0 || game.baseRank == null) {
+      // Starting new round - reset the tracking
+      lastAutoActionStateRef.current = null
+      return
+    }
+
+    // Create a unique key for this game state to prevent re-triggering
+    // Only include the fields that matter for auto-action decision
+    const stateKey = `${game.currentPlayer}-${game.roundStarter}-${game.lastHitter}-${game.baseRank}-${currentPile.length}`
+
+    // If we've already initiated auto-action for this state, don't do it again
+    if (lastAutoActionStateRef.current === stateKey) return
 
     const gameRef = ref(database, gamePath)
     const currentHand = (myRole === 'host' ? game.hostHand : game.guestHand) || []
+    const myName = myRole === 'host' ? game.host.name : game.guest?.name || playerName
+    const opponentName = myRole === 'host' ? game.guest?.name || 'Vendég' : game.host.name
 
-    if (game.lastHitter === myRole) {
-      // Auto-take
-      setTimeout(async () => {
-        const newState = takePile({ ...game, lastMoveTime: Date.now() })
-        await set(gameRef, newState)
-      }, 500)
-    } else if (!hasHittingCard(currentHand, game.baseRank)) {
-      // Auto-pass (no hitting cards)
-      setTimeout(async () => {
-        const newState = takePile({ ...game, lastMoveTime: Date.now() })
-        await set(gameRef, newState)
-      }, 500)
+    let shouldAutoAction = false
+    let actionMessage = ''
+
+    if (game.roundStarter === myRole) {
+      // I started this round
+      if (game.lastHitter === myRole) {
+        // Auto-take - I'm the last hitter (opponent couldn't/didn't hit)
+        shouldAutoAction = true
+        actionMessage = `${myName} bevitte a paklit!`
+      } else if (!hasHittingCard(currentHand, game.baseRank)) {
+        // Auto-pass - opponent hit and I can't hit back
+        shouldAutoAction = true
+        actionMessage = `${myName} nem tud visszaütni - ${opponentName} viszi!`
+      }
+    } else {
+      // I'm responding (not round starter)
+      if (!hasHittingCard(currentHand, game.baseRank)) {
+        // Auto-pass - I can't hit, roundStarter takes pile
+        shouldAutoAction = true
+        actionMessage = `${myName} nem tud ütni - ${opponentName} viszi!`
+      }
     }
-  }, [game, database, gamePath, myRole, takePile])
 
-  // Reset game
+    if (!shouldAutoAction) return
+
+    // Mark this state as being processed
+    lastAutoActionStateRef.current = stateKey
+    autoActionInProgressRef.current = true
+
+    // Longer delay for human players to see what happened
+    const timeoutId = setTimeout(async () => {
+      try {
+        // Re-check game state before executing (prevent race conditions)
+        // The game state might have changed while we were waiting
+        const newState = takePile({ ...game, lastMoveTime: Date.now() })
+        newState.message = actionMessage
+        await set(gameRef, newState)
+      } catch (error) {
+        console.error('Auto-action failed:', error)
+        // Reset so we can retry
+        lastAutoActionStateRef.current = null
+      } finally {
+        autoActionInProgressRef.current = false
+      }
+    }, 1500) // Increased to 1.5 seconds for better UX
+
+    return () => {
+      clearTimeout(timeoutId)
+      autoActionInProgressRef.current = false
+    }
+  }, [game, database, gamePath, myRole, takePile, playerName])
+
+  // Start game with AI opponent (when waiting alone)
+  const startWithAI = async () => {
+    if (!database || !game || game.status !== 'waiting') return
+
+    const gameRef = ref(database, gamePath)
+    await update(gameRef, {
+      status: 'playing',
+      message: `${game.host.name} kezd!`,
+      lastMoveTime: Date.now(),
+      guest: {
+        id: 'ai-opponent',
+        name: '🤖 AI Ellenfél',
+        connected: true,
+        lastActive: Date.now(),
+        aiTakeover: true, // AI from the start
+      },
+    })
+  }
+
+  // Reset game (start new round)
   const resetGame = async () => {
     if (!database || !game) return
 
@@ -509,6 +677,71 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
       message: `${game.host.name} kezd!`,
       host: { ...game.host, aiTakeover: false },
       guest: game.guest ? { ...game.guest, aiTakeover: false } : null,
+      rematchRequestedBy: null,
+      rematchDeclinedBy: null,
+    }
+
+    await set(gameRef, newGame)
+  }
+
+  // Request rematch from opponent
+  const requestRematch = async () => {
+    if (!database || !game || !myRole) return
+    const gameRef = ref(database, gamePath)
+    await update(gameRef, {
+      rematchRequestedBy: myRole,
+    })
+  }
+
+  // Accept rematch - start new game
+  const acceptRematch = async () => {
+    await resetGame()
+  }
+
+  // Decline rematch
+  const declineRematch = async () => {
+    if (!database || !game || !myRole) return
+    const gameRef = ref(database, gamePath)
+    await update(gameRef, {
+      rematchDeclinedBy: myRole,
+    })
+  }
+
+  // Start with AI after opponent declined rematch
+  const startWithAIAfterDecline = async () => {
+    if (!database || !game) return
+
+    const gameRef = ref(database, gamePath)
+    const deck = shuffleDeck(createDeck())
+    const hostHand = deck.slice(0, HAND_SIZE)
+    const guestHand = deck.slice(HAND_SIZE, HAND_SIZE * 2)
+    const remainingDeck = deck.slice(HAND_SIZE * 2)
+
+    // Replace opponent with AI
+    const newGame: GameState = {
+      status: 'playing',
+      deck: remainingDeck,
+      hostHand,
+      guestHand,
+      pile: [],
+      hostWon: [],
+      guestWon: [],
+      currentPlayer: 'host',
+      baseRank: null,
+      lastHitter: null,
+      roundStarter: null,
+      lastMoveTime: Date.now(),
+      message: `${game.host.name} kezd!`,
+      host: game.host,
+      guest: {
+        id: 'ai-opponent',
+        name: '🤖 AI Ellenfél',
+        connected: true,
+        lastActive: Date.now(),
+        aiTakeover: true,
+      },
+      rematchRequestedBy: null,
+      rematchDeclinedBy: null,
     }
 
     await set(gameRef, newGame)
@@ -534,8 +767,38 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
     return <ZsirozasSinglePlayer />
   }
 
+  // Duplicate player error
+  if (duplicatePlayer) {
+    return (
+      <div className="zsirozas">
+        <div className="game-over">
+          <h2>⚠️ Már bent vagy!</h2>
+          <p>Ezzel a névvel már csatlakoztál ehhez a szobához.</p>
+          <p style={{ color: '#888', fontSize: '0.9rem' }}>
+            Használj másik nevet vagy nyisd meg a másik ablakot.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Room full error - third player trying to join
+  if (roomFull) {
+    return (
+      <div className="zsirozas">
+        <div className="game-over">
+          <h2>🚫 Tele a szoba!</h2>
+          <p>Ez a játék már elkezdődött két játékossal.</p>
+          <p style={{ color: '#888', fontSize: '0.9rem' }}>
+            Hozz létre új szobát vagy csatlakozz másik játékhoz.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   // Loading state
-  if (!game) {
+  if (!game || !myRole) {
     return (
       <div className="zsirozas">
         <div className="game-header">
@@ -555,6 +818,16 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
         <p style={{ color: '#888', textAlign: 'center' }}>
           Oszd meg a szoba kódot a barátaiddal!
         </p>
+        <p style={{ color: '#666', textAlign: 'center', marginTop: '1rem' }}>
+          vagy
+        </p>
+        <button
+          className="btn-primary"
+          onClick={startWithAI}
+          style={{ marginTop: '0.5rem' }}
+        >
+          🤖 AI ellenfél ellen
+        </button>
       </div>
     )
   }
@@ -576,11 +849,11 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
     return '🤝 Döntetlen!'
   }
 
-  const canPass = isMyTurn &&
-    game.roundStarter === myRole &&
-    game.lastHitter !== myRole &&
-    pile.length > 0 &&
-    hasHittingCard(myHand, game.baseRank)
+  // Can pass when: I'm the round starter, opponent hit, and I CAN hit back but choose not to
+  // (When can't hit, auto-pass happens automatically)
+  // Note: Firebase may return undefined instead of null for baseRank
+  const canPass = isMyTurn && pile.length > 0 && game.baseRank != null &&
+    game.roundStarter === myRole && game.lastHitter !== myRole && hasHittingCard(myHand, game.baseRank)
 
   return (
     <div className="zsirozas">
@@ -607,13 +880,74 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
         </span>
       </div>
 
+      {/* Turn indicator */}
+      <div className={`turn-indicator ${isMyTurn ? 'my-turn' : 'opponent-turn'}`}>
+        {isMyTurn ? '🎯 Te jössz!' : `⏳ ${opponentName} gondolkodik...`}
+      </div>
+
+      {/* Game message */}
+      {game.message && (
+        <div className="game-message">
+          {game.message}
+        </div>
+      )}
+
       {game.status === 'finished' ? (
         <div className="game-over">
           <h2>{getWinner()}</h2>
           <p>👤 {myName}: {myPoints} pont | {opponentName}: {opponentPoints} pont</p>
-          <button className="btn-primary" onClick={resetGame}>
-            🔄 Új játék
-          </button>
+
+          {/* Rematch UI - different for AI vs human opponent */}
+          {game.guest?.aiTakeover ? (
+            // AI opponent - just start new game directly
+            <button className="btn-primary" onClick={resetGame}>
+              🔄 Új játék
+            </button>
+          ) : game.rematchDeclinedBy === opponentRole ? (
+            // Opponent declined - offer AI option
+            <div className="rematch-section">
+              <p style={{ color: '#ff6b6b', marginBottom: '0.5rem' }}>
+                {opponentName} nem akar új játékot.
+              </p>
+              <button className="btn-primary" onClick={startWithAIAfterDecline}>
+                🤖 Folytatás AI-val
+              </button>
+            </div>
+          ) : game.rematchDeclinedBy === myRole ? (
+            // I declined - waiting or leave
+            <p style={{ color: '#888' }}>Elutasítottad az új játékot.</p>
+          ) : game.rematchRequestedBy === myRole ? (
+            // I requested - waiting for opponent
+            <div className="rematch-section">
+              <p style={{ color: '#ffd93d' }}>
+                ⏳ Várakozás {opponentName} válaszára...
+              </p>
+            </div>
+          ) : game.rematchRequestedBy === opponentRole ? (
+            // Opponent requested - show accept/decline buttons
+            <div className="rematch-section">
+              <p style={{ marginBottom: '0.5rem' }}>
+                {opponentName} új játékot szeretne!
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                <button className="btn-primary" onClick={acceptRematch}>
+                  ✅ Elfogad
+                </button>
+                <button
+                  className="btn-secondary"
+                  onClick={declineRematch}
+                  style={{ background: '#666' }}
+                >
+                  ❌ Elutasít
+                </button>
+              </div>
+            </div>
+          ) : (
+            // No request yet - show request button
+            <button className="btn-primary" onClick={requestRematch}>
+              🔄 Új játék kérése
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -657,13 +991,16 @@ export default function ZsirozasMultiplayer({ roomId, isHost }: ZsirozasMultipla
           <div className="player-hand">
             <div className="hand-label">👤 {myName}</div>
             <div className="cards">
-              {myHand.map(card =>
-                renderCard(
+              {myHand.map(card => {
+                // Card is disabled only if it's not my turn
+                // When responding, player can play ANY card (hitting or not)
+                const isDisabled = !isMyTurn
+                return renderCard(
                   card,
                   () => playCard(card),
-                  !isMyTurn
+                  isDisabled
                 )
-              )}
+              })}
             </div>
           </div>
         </>

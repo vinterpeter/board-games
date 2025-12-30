@@ -64,7 +64,7 @@ export default function GameLobby() {
       </div>
 
       <div className="lobby-actions">
-        <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+        <button className="btn-primary" onClick={() => hasValidName ? handleCreateRoom() : setShowCreateModal(true)}>
           ➕ Új szoba létrehozása
         </button>
         <button className="btn-secondary" onClick={() => setShowJoinModal(true)}>

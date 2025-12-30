@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Piros/Herz - Heart (Hungarian card suit) -->
+  <!-- Main heart shape -->
+  <path d="M50 92
+           C15 60 5 35 18 20
+           C32 5 50 12 50 28
+           C50 12 68 5 82 20
+           C95 35 85 60 50 92 Z" fill="currentColor"/>
+  <!-- Highlight -->
+  <path d="M28 30 Q32 18 42 15" stroke="rgba(255,255,255,0.3)" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <ellipse cx="30" cy="35" rx="8" ry="10" fill="rgba(255,255,255,0.15)"/>
+</svg>

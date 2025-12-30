@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { usePlayerName } from '../contexts/PlayerNameContext'
-import type { Card, Suit } from './hungarianCards'
+import { usePlayerName } from '../../contexts/PlayerNameContext'
+import type { Card, Suit } from '../shared/hungarianCards'
 import {
   createDeck,
   shuffleDeck,
@@ -9,9 +9,9 @@ import {
   SNAPSZER_RANKS,
   SNAPSZER_VALUES,
   SNAPSZER_STRENGTH
-} from './hungarianCards'
-import { getCardImagePath, getCardBackPath } from './cardImages'
-import './Snapszer.css'
+} from '../shared/hungarianCards'
+import { getCardImagePath, getCardBackPath } from '../shared/cardImages'
+import './style.css'
 
 type Player = 'player' | 'ai'
 

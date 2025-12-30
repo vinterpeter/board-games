@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { usePlayerName } from '../contexts/PlayerNameContext'
-import './Memory.css'
+import { usePlayerName } from '../../contexts/PlayerNameContext'
+import './style.css'
 
 interface Card {
   id: number

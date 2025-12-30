@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { usePlayerName } from '../contexts/PlayerNameContext'
-import './Connect4.css'
+import { usePlayerName } from '../../contexts/PlayerNameContext'
+import './style.css'
 
 type Cell = 'red' | 'yellow' | null
 type Board = Cell[][]
